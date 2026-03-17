@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Техніка ──────────────────────────────────────
+
+model Equipment {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  brand       String
+  type        EquipmentType
+  description String
+  pricePerHour Int
+  isPopular   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  specs         EquipmentSpec[]
+  images        EquipmentImage[]
+  bookedPeriods BookedPeriod[]
+  orders        Order[]
+
+  @@index([type])
+  @@index([brand])
+  @@index([isPopular])
+}
+
+model EquipmentSpec {
+  id          String    @id @default(cuid())
+  label       String
+  value       String
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@index([equipmentId])
+}
+
+model EquipmentImage {
+  id          String    @id @default(cuid())
+  url         String
+  alt         String
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@index([equipmentId])
+}
+
+model BookedPeriod {
+  id          String    @id @default(cuid())
+  from        DateTime
+  to          DateTime
+  note        String?
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  orderId     String?
+  order       Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([equipmentId])
+  @@index([from, to])
+}
+
+// ─── Замовлення ───────────────────────────────────
+
+model Order {
+  id            String      @id @default(cuid())
+  customerName  String
+  phone         String
+  email         String?
+  date          DateTime?
+  address       String?
+  comment       String?
+  status        OrderStatus @default(NEW)
+  equipmentId   String
+  equipment     Equipment   @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  bookedPeriods BookedPeriod[]
+
+  @@index([status])
+  @@index([equipmentId])
+}
+
+// ─── Адміністратори ───────────────────────────────
+
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         AdminRole @default(MANAGER)
+  createdAt    DateTime  @default(now())
+}
+
+// ─── Enums ────────────────────────────────────────
+
+enum EquipmentType {
+  excavator
+  loader
+  bulldozer
+  crane
+  roller
+  dump_truck
+  concrete_mixer
+  generator
+  other
+}
+
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AdminRole {
+  ADMIN
+  MANAGER
+}

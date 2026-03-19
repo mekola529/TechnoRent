@@ -46,10 +46,10 @@ adminEquipmentRouter.post("/", validate(equipmentSchema), async (req, res) => {
 });
 
 /** Оновити техніку */
-adminEquipmentRouter.put("/:id", async (req, res) => {
+adminEquipmentRouter.put("/:id", validate(equipmentSchema.partial()), async (req, res) => {
   try {
     const { specs, images, ...data } = req.body;
-    const id = req.params.id;
+    const id = req.params.id as string;
 
     // Оновити основні дані
     const item = await prisma.equipment.update({
@@ -96,7 +96,7 @@ adminEquipmentRouter.put("/:id", async (req, res) => {
 /** Видалити техніку */
 adminEquipmentRouter.delete("/:id", async (req, res) => {
   try {
-    await prisma.equipment.delete({ where: { id: req.params.id } });
+    await prisma.equipment.delete({ where: { id: req.params.id as string } });
     res.json({ success: true });
   } catch (e) {
     console.error("DELETE /api/admin/equipment/:id error:", e);

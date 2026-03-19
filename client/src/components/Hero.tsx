@@ -4,7 +4,7 @@ export default function Hero() {
   return (
     <section
       aria-label="Оренда спецтехніки у Львові"
-      className="relative flex min-h-[520px] w-full items-center overflow-hidden rounded-[20px]"
+      className="relative flex min-h-[520px] w-full items-center overflow-hidden"
     >
       {/* Background image */}
       <img
@@ -17,9 +17,9 @@ export default function Hero() {
         fetchPriority="high"
       />
       {/* Overlay */}
-      <div className="absolute inset-0 rounded-[20px] bg-black/40" />
+      <div className="absolute inset-0 bg-black/40" />
 
-      <div className="relative z-10 flex w-full max-w-[720px] flex-col gap-3 px-[120px] py-16 max-xl:px-8 max-md:px-4">
+      <div className="relative z-10 flex w-full max-w-[720px] flex-col gap-3.5 px-[112px] py-[72px] max-xl:px-8 max-md:px-4">
         <h1 className="text-[58px] font-bold leading-tight text-white max-lg:text-4xl">
           Оренда спецтехніки у Львові
         </h1>
@@ -27,7 +27,7 @@ export default function Hero() {
           Швидка оренда екскаваторів, навантажувачів та іншої техніки для
           будівництва. Працюємо по Львову та області.
         </p>
-        <div className="mt-4 flex gap-3">
+        <div className="mt-1.5 flex gap-3">
           <Link
             to="/catalog"
             className="rounded-full bg-primary px-[22px] py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"

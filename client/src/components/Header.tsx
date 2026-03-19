@@ -5,8 +5,9 @@ export default function Header() {
     <header className="w-full border-b border-border bg-white">
       <div className="mx-auto flex items-center justify-between px-[120px] py-4 max-xl:px-8 max-md:px-4">
         {/* Logo */}
-        <Link to="/" className="text-[28px] font-bold text-dark">
-          TechnoRent
+        <Link to="/" className="text-[28px] font-bold">
+          <span className="text-dark">Techno</span>
+          <span className="text-primary">Rent</span>
         </Link>
 
         {/* Navigation */}

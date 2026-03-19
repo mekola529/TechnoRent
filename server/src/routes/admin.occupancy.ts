@@ -68,12 +68,12 @@ adminOccupancyRouter.post("/", validate(periodSchema), async (req, res) => {
 });
 
 /** Оновити період */
-adminOccupancyRouter.put("/:id", async (req, res) => {
+adminOccupancyRouter.put("/:id", validate(periodSchema.partial()), async (req, res) => {
   try {
     const { from, to, note, equipmentId, orderId } = req.body;
 
     const period = await prisma.bookedPeriod.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: {
         ...(from && { from: new Date(from) }),
         ...(to && { to: new Date(to) }),
@@ -99,7 +99,7 @@ adminOccupancyRouter.put("/:id", async (req, res) => {
 /** Видалити період */
 adminOccupancyRouter.delete("/:id", async (req, res) => {
   try {
-    await prisma.bookedPeriod.delete({ where: { id: req.params.id } });
+    await prisma.bookedPeriod.delete({ where: { id: req.params.id as string } });
     res.json({ success: true });
   } catch (e) {
     console.error("DELETE /api/admin/occupancy/:id error:", e);

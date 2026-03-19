@@ -215,6 +215,7 @@ export default function EquipmentDetailPage() {
         </div>
       </section>
 
+      <div className="mt-16" />
       <Footer />
 
       {showModal && (

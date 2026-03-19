@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
+import { z } from "zod";
 
 export const adminOrdersRouter = Router();
 
@@ -34,19 +36,17 @@ adminOrdersRouter.get("/", async (req, res) => {
   }
 });
 
+const statusSchema = z.object({
+  status: z.enum(["NEW", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]),
+});
+
 /** Оновити статус замовлення */
-adminOrdersRouter.patch("/:id/status", async (req, res) => {
+adminOrdersRouter.patch("/:id/status", validate(statusSchema), async (req, res) => {
   try {
     const { status } = req.body;
-    const validStatuses = ["NEW", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED"];
-
-    if (!validStatuses.includes(status)) {
-      res.status(400).json({ error: "Невалідний статус" });
-      return;
-    }
 
     const order = await prisma.order.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: { status },
       include: {
         equipment: { select: { name: true, slug: true } },
@@ -67,7 +67,7 @@ adminOrdersRouter.patch("/:id/status", async (req, res) => {
 /** Видалити замовлення */
 adminOrdersRouter.delete("/:id", async (req, res) => {
   try {
-    await prisma.order.delete({ where: { id: req.params.id } });
+    await prisma.order.delete({ where: { id: req.params.id as string } });
     res.json({ success: true });
   } catch (e) {
     console.error("DELETE /api/admin/orders/:id error:", e);

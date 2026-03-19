@@ -1,6 +1,6 @@
 export default function WhyChooseUs() {
   return (
-    <section className="flex w-full gap-7 px-[120px] py-6 max-xl:px-8 max-lg:flex-col max-md:px-4">
+    <section className="flex w-full gap-7 px-[120px] py-[50px] max-xl:px-8 max-lg:flex-col max-md:px-4">
       {/* Image */}
       <div className="h-[360px] w-full overflow-hidden rounded-[18px] max-lg:h-[260px]">
         <img

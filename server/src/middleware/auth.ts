@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
+const _jwtSecret = process.env.JWT_SECRET;
+if (!_jwtSecret) {
+  throw new Error("JWT_SECRET environment variable is required");
+}
+const JWT_SECRET: string = _jwtSecret;
 
 export interface AuthRequest extends Request {
   adminId?: string;

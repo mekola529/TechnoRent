@@ -178,6 +178,7 @@ export default function CatalogPage() {
         </div>
       </section>
 
+      <div className="mt-16" />
       <Footer />
     </div>
   );

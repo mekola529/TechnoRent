@@ -172,13 +172,12 @@ const equipmentList = [
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // Очистити існуючі дані
-  await prisma.bookedPeriod.deleteMany();
-  await prisma.equipmentImage.deleteMany();
-  await prisma.equipmentSpec.deleteMany();
-  await prisma.order.deleteMany();
-  await prisma.equipment.deleteMany();
-  await prisma.admin.deleteMany();
+  // Перевірити чи вже є дані
+  const existingEquipment = await prisma.equipment.count();
+  if (existingEquipment > 0) {
+    console.log("  ℹ️ Database already seeded, skipping.");
+    return;
+  }
 
   // Створити адміна
   const adminEmail = process.env.ADMIN_EMAIL || "admin";

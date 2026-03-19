@@ -7,9 +7,7 @@ services:
     environment:
       POSTGRES_DB: technorent
       POSTGRES_USER: technorent
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-technorent_secret}
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -21,10 +19,12 @@ services:
     ports:
       - "${PORT:-3001}:3001"
     environment:
-      DATABASE_URL: postgresql://technorent:${DB_PASSWORD:-technorent_secret}@db:5432/technorent
+      DATABASE_URL: postgresql://technorent:${DB_PASSWORD}@db:5432/technorent
       JWT_SECRET: ${JWT_SECRET}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-password}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3001}
+      SITE_URL: ${SITE_URL:-https://technorent.ua}
       NODE_ENV: production
       PORT: 3001
     depends_on:

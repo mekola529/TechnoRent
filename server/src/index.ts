@@ -9,6 +9,8 @@ config({ path: path.resolve(__dirname, "../../.env") });
 
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { prisma } from "./lib/prisma.js";
 import { equipmentRouter } from "./routes/equipment.js";
 import { ordersRouter } from "./routes/orders.js";
@@ -21,15 +23,17 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // ─── Middleware ────────────────────────────────────
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
 app.use(express.json());
 
-// Security headers
-app.use((_req, res, next) => {
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("X-Frame-Options", "SAMEORIGIN");
-  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  next();
+// Rate limiting for auth
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  message: { error: "Забагато спроб. Спробуйте пізніше." },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // ─── Dynamic Sitemap ──────────────────────────────
@@ -58,7 +62,7 @@ app.get("/api/sitemap.xml", async (_req, res) => {
 // ─── Public API ───────────────────────────────────
 app.use("/api/equipment", equipmentRouter);
 app.use("/api/orders", ordersRouter);
-app.use("/api/auth", authRouter);
+app.use("/api/auth", authLimiter, authRouter);
 
 // ─── Admin API (protected) ────────────────────────
 app.use("/api/admin/equipment", adminEquipmentRouter);

@@ -1,20 +1,44 @@
 export default function CallToAction() {
   return (
-    <section aria-label="Залишити заявку" className="w-full rounded-[20px] bg-dark px-[120px] py-11 max-xl:px-8 max-md:px-4">
-      <div className="flex flex-col gap-3">
+    <section aria-label="Залишити заявку" className="flex w-full items-center justify-between gap-6 bg-dark px-[112px] py-12 max-xl:px-8 max-lg:flex-col max-md:px-4">
+      {/* Ліва частина */}
+      <div className="flex flex-1 flex-col gap-3">
         <h2 className="text-[42px] font-bold text-white max-lg:text-3xl">
           Потрібна техніка для роботи?
         </h2>
-        <p className="max-w-[700px] text-[17px] font-medium text-gray-100">
+        <p className="text-[17px] font-medium text-gray-100">
           Залиште заявку і ми допоможемо швидко підібрати техніку для вашого
           проєкту.
         </p>
         <a
           href="#order"
-          className="mt-2 w-fit rounded-full bg-primary px-[22px] py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
+          className="w-fit rounded-full bg-primary px-[22px] py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
         >
           Замовити техніку
         </a>
+      </div>
+
+      {/* Форма зворотного дзвінка */}
+      <div className="flex w-[360px] shrink-0 flex-col gap-2.5 rounded-[14px] border border-border bg-white p-5 max-lg:w-full">
+        <h3 className="text-[22px] font-bold text-dark">Заявка на дзвінок</h3>
+        <label className="text-xs font-bold text-dark-text">Імʼя</label>
+        <input
+          type="text"
+          placeholder="Введіть імʼя"
+          className="rounded-[10px] border border-border bg-[#F9FAFB] px-3 py-3 text-[13px] font-medium text-dark-text placeholder:text-[#98A2B3] outline-none focus:ring-2 focus:ring-primary"
+        />
+        <label className="text-xs font-bold text-dark-text">Телефон</label>
+        <input
+          type="tel"
+          placeholder="+380"
+          className="rounded-[10px] border border-border bg-[#F9FAFB] px-3 py-3 text-[13px] font-medium text-dark-text placeholder:text-[#98A2B3] outline-none focus:ring-2 focus:ring-primary"
+        />
+        <button
+          type="button"
+          className="w-full rounded-full bg-primary px-3.5 py-3 text-[13px] font-bold text-dark transition-opacity hover:opacity-90"
+        >
+          Замовити дзвінок
+        </button>
       </div>
     </section>
   );

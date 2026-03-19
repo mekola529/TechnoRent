@@ -53,8 +53,8 @@ export default function HomePage() {
       <Header />
       <main>
         <Hero />
-        <PopularEquipment />
         <HowItWorks />
+        <PopularEquipment />
         <WhyChooseUs />
         <CallToAction />
       </main>

@@ -7,7 +7,7 @@ import { validate } from "../middleware/validate.js";
 
 export const authRouter = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret";
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 const loginSchema = z.object({
   email: z.string().min(1, "Логін обов'язковий"),

@@ -26,9 +26,7 @@
     "prisma": "^6.9.0",
     "tsx": "^4.19.0",
     "typescript": "~5.9.3",
-    "zod": "^3.25.28"
-  },
-  "devDependencies": {
+    "zod": "^3.25.28",
     "@types/bcryptjs": "^3.0.0",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.3",

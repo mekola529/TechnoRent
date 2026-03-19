@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Завантажуємо .env з кореня проєкту
+// Завантажуємо .env (для локальної розробки)
 config({ path: path.resolve(__dirname, "../../.env") });
 
 import express from "express";

@@ -432,7 +432,7 @@ export default function AdminEquipmentPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  accept="image/*"
                   multiple
                   onChange={(e) => handleFiles(e.target.files)}
                   className="hidden"

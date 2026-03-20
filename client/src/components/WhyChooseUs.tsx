@@ -1,29 +1,47 @@
 export default function WhyChooseUs() {
+  const points = [
+    { title: "Власний парк техніки", desc: "Понад 50 одиниць сучасної будівельної техніки провідних брендів" },
+    { title: "Досвідчені оператори", desc: "Кваліфіковані спеціалісти з багаторічним досвідом роботи" },
+    { title: "Швидка подача техніки", desc: "Доставка на обʼєкт протягом 2–4 годин після замовлення" },
+    { title: "Працюємо по Львову та області", desc: "Обслуговуємо будівельні майданчики у Львові та Львівській області" },
+  ];
+
   return (
-    <section className="flex w-full gap-7 px-[120px] py-[50px] max-xl:px-8 max-lg:flex-col max-md:px-4">
-      {/* Image */}
-      <div className="h-[360px] w-full overflow-hidden rounded-[18px] max-lg:h-[260px]">
+    <section className="flex w-full gap-7 px-[120px] py-16 max-xl:px-8 max-lg:flex-col max-md:px-4 max-md:py-10">
+      {/* Left — image with title overlay */}
+      <div className="relative h-[420px] w-full overflow-hidden rounded-[18px] max-lg:h-[280px]">
         <img
           src="https://images.unsplash.com/photo-1661120212012-aca40671ba47?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800"
           alt="Спецтехніка TechnoRent на будівельному майданчику"
           className="h-full w-full object-cover"
           loading="lazy"
           width={800}
-          height={360}
+          height={420}
         />
+        <div className="absolute inset-0 bg-black/40" />
+        <h2 className="absolute inset-0 flex items-center justify-center text-center text-[34px] font-bold leading-tight text-white max-lg:text-2xl max-md:text-xl">
+          Чому обирають
+          <br />
+          <span className="text-primary">TechnoRent</span>
+        </h2>
       </div>
 
-      {/* Text */}
-      <div className="flex w-full flex-col justify-center gap-3">
-        <h2 className="text-[38px] font-bold leading-tight text-dark max-lg:text-3xl">
-          Чому обирають TechnoRent
-        </h2>
-        <ul className="list-none text-lg font-medium leading-[1.6] text-dark-text">
-          <li>• Власний парк техніки</li>
-          <li>• Досвідчені оператори</li>
-          <li>• Швидка подача техніки</li>
-          <li>• Працюємо по Львову та області</li>
-        </ul>
+      {/* Right — points */}
+      <div className="flex w-full flex-col justify-center gap-4">
+        {points.map((p) => (
+          <div
+            key={p.title}
+            className="flex gap-3.5 rounded-[14px] border border-border bg-white p-4 transition-shadow hover:shadow-md"
+          >
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-dark">
+              ✓
+            </span>
+            <div>
+              <p className="text-[15px] font-bold text-dark">{p.title}</p>
+              <p className="mt-0.5 text-[13px] leading-snug text-dark-text">{p.desc}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );

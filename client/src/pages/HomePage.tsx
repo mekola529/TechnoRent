@@ -6,6 +6,7 @@ import HowItWorks from "../components/HowItWorks";
 import WhyChooseUs from "../components/WhyChooseUs";
 import CallToAction from "../components/CallToAction";
 import Footer from "../components/Footer";
+import MobileTabBar from "../components/MobileTabBar";
 
 const localBusinessJsonLd = {
   "@context": "https://schema.org",
@@ -59,6 +60,7 @@ export default function HomePage() {
         <CallToAction />
       </main>
       <Footer />
+      <MobileTabBar />
     </div>
   );
 }

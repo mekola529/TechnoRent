@@ -21,7 +21,7 @@ export default function Hero() {
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/40" />
 
-      <div className="relative z-10 flex w-full max-w-[720px] flex-col gap-3.5 px-[112px] py-[72px] max-xl:px-8 max-md:px-4">
+      <div className="relative z-10 flex w-full max-w-[720px] flex-col gap-3.5 px-[120px] py-20 max-xl:px-8 max-md:px-4 max-md:py-12">
         <h1 className="text-[58px] font-bold leading-tight text-white max-lg:text-4xl">
           Оренда спецтехніки у Львові
         </h1>

@@ -13,7 +13,7 @@ export default function PopularEquipment() {
   if (!popular.length) return null;
 
   return (
-    <section className="flex w-full flex-col items-center px-[112px] pt-[90px] pb-[50px] max-xl:px-8 max-md:px-4">
+    <section className="flex w-full flex-col items-center px-[120px] py-16 max-xl:px-8 max-md:px-4 max-md:py-10">
       <h2 className="mb-[18px] text-center text-[40px] font-bold text-dark max-lg:text-3xl">
         Популярна техніка
       </h2>

@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="w-full bg-dark px-[120px] py-10 max-xl:px-8 max-md:px-4">
+    <footer className="w-full bg-dark px-[120px] py-10 pb-20 max-xl:px-8 max-md:px-4 max-md:pb-24">
       <div className="grid grid-cols-4 gap-8 max-lg:grid-cols-2 max-md:grid-cols-1">
         {/* Контакти */}
         <div className="flex flex-col gap-2">

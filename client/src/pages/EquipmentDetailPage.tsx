@@ -5,6 +5,7 @@ import { getEquipmentBySlug, formatPrice, isAvailableOnDate } from "../data/equi
 import type { Equipment } from "../data/types";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import MobileTabBar from "../components/MobileTabBar";
 import OrderModal from "../components/OrderModal";
 
 /** Генерує масив днів місяця */
@@ -60,6 +61,7 @@ export default function EquipmentDetailPage() {
           <p className="text-lg font-medium text-dark-text">Завантаження...</p>
         </div>
         <Footer />
+        <MobileTabBar />
       </div>
     );
   }
@@ -76,6 +78,7 @@ export default function EquipmentDetailPage() {
           </Link>
         </div>
         <Footer />
+        <MobileTabBar />
       </div>
     );
   }
@@ -217,6 +220,7 @@ export default function EquipmentDetailPage() {
 
       <div className="mt-16" />
       <Footer />
+      <MobileTabBar />
 
       {showModal && (
         <OrderModal

@@ -10,6 +10,7 @@ import type { Equipment, EquipmentType } from "../data/types";
 import EquipmentCard from "../components/EquipmentCard";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import MobileTabBar from "../components/MobileTabBar";
 
 type SortOption = "popular" | "price-asc" | "price-desc" | "name";
 
@@ -180,6 +181,7 @@ export default function CatalogPage() {
 
       <div className="mt-16" />
       <Footer />
+      <MobileTabBar />
     </div>
   );
 }

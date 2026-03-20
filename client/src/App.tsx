@@ -9,6 +9,8 @@ import AdminLayout from "./components/AdminLayout";
 import AdminEquipmentPage from "./pages/AdminEquipmentPage";
 import AdminOrdersPage from "./pages/AdminOrdersPage";
 import AdminOccupancyPage from "./pages/AdminOccupancyPage";
+import ServicesPage from "./pages/ServicesPage";
+import ContactsPage from "./pages/ContactsPage";
 import RequireAuth from "./components/RequireAuth";
 
 function App() {
@@ -20,6 +22,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/catalog/:slug" element={<EquipmentDetailPage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/admin" element={<AdminLoginPage />} />
 
           {/* Protected admin routes */}

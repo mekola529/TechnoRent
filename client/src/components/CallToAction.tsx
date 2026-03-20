@@ -23,7 +23,7 @@ export default function CallToAction() {
   }
 
   return (
-    <section aria-label="Залишити заявку" className="flex w-full items-center justify-between gap-6 bg-dark px-[112px] py-12 max-xl:px-8 max-lg:flex-col max-md:px-4">
+    <section aria-label="Залишити заявку" className="flex w-full items-center justify-between gap-6 bg-dark px-[120px] py-16 max-xl:px-8 max-lg:flex-col max-md:px-4 max-md:py-10">
       {/* Ліва частина */}
       <div className="flex flex-1 flex-col gap-3">
         <h2 className="text-[42px] font-bold text-white max-lg:text-3xl">

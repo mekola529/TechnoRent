@@ -1,7 +1,19 @@
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { apiFetch } from "../api/client";
 
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
+
 /* ── Types ── */
+
+interface ImageItem {
+  url: string;
+  alt: string;
+}
+
+interface SpecItem {
+  label: string;
+  value: string;
+}
 
 interface ApiEquipment {
   id: string;
@@ -44,7 +56,95 @@ export default function AdminEquipmentPage() {
   const [formPrice, setFormPrice] = useState("");
   const [formDesc, setFormDesc] = useState("");
   const [formPopular, setFormPopular] = useState(false);
+  const [formImages, setFormImages] = useState<ImageItem[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [formSpecs, setFormSpecs] = useState<SpecItem[]>([]);
+  const [newSpecLabel, setNewSpecLabel] = useState("");
+  const [newSpecValue, setNewSpecValue] = useState("");
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function addImageByUrl() {
+    const url = imageUrl.trim();
+    if (!url) return;
+    setFormImages((prev) => [...prev, { url, alt: "" }]);
+    setImageUrl("");
+  }
+
+  /** Upload image via FormData (not apiFetch — needs multipart) */
+  async function uploadImage(file: File): Promise<ImageItem> {
+    const fd = new FormData();
+    fd.append("image", file);
+    const token = localStorage.getItem("admin_token");
+    const res = await fetch(`${API_BASE}/admin/upload`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: fd,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `HTTP ${res.status}`);
+    }
+    return res.json();
+  }
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const uploads = await Promise.all(Array.from(files).map(uploadImage));
+      setFormImages((prev) => [...prev, ...uploads]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Помилка завантаження фото");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  /* Collect all unique spec labels used across equipment */
+  const existingLabels = Array.from(
+    new Set(items.flatMap((it) => it.specs.map((s) => s.label)))
+  ).sort();
+
+  function addSpec() {
+    const label = newSpecLabel.trim();
+    const value = newSpecValue.trim();
+    if (!label || !value) return;
+    setFormSpecs((prev) => [...prev, { label, value }]);
+    setNewSpecLabel("");
+    setNewSpecValue("");
+  }
+
+  function removeSpec(index: number) {
+    setFormSpecs((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateSpec(index: number, field: "label" | "value", val: string) {
+    setFormSpecs((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: val } : s)));
+  }
+
+  async function removeImage(index: number) {
+    const img = formImages[index];
+    // Delete from server if it's an uploaded file
+    if (img.url.startsWith("/uploads/")) {
+      const token = localStorage.getItem("admin_token");
+      try {
+        await fetch(`${API_BASE}/admin/upload`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ url: img.url }),
+        });
+      } catch {
+        // ignore — file cleanup is best-effort
+      }
+    }
+    setFormImages((prev) => prev.filter((_, i) => i !== index));
+  }
 
   async function loadItems() {
     setLoading(true);
@@ -71,6 +171,8 @@ export default function AdminEquipmentPage() {
     setFormPrice(String(item.pricePerHour));
     setFormDesc(item.description);
     setFormPopular(item.isPopular);
+    setFormImages(item.images.map(({ url, alt }) => ({ url, alt })));
+    setFormSpecs(item.specs.map(({ label, value }) => ({ label, value })));
   }
 
   function openNew() {
@@ -82,6 +184,8 @@ export default function AdminEquipmentPage() {
     setFormPrice("");
     setFormDesc("");
     setFormPopular(false);
+    setFormImages([]);
+    setFormSpecs([]);
   }
 
   function closeEdit() {
@@ -100,6 +204,8 @@ export default function AdminEquipmentPage() {
       description: formDesc,
       pricePerHour: Number(formPrice),
       isPopular: formPopular,
+      images: formImages,
+      specs: formSpecs,
     };
 
     try {
@@ -293,6 +399,132 @@ export default function AdminEquipmentPage() {
                   Популярна техніка
                 </span>
               </label>
+
+              {/* Image upload */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-bold text-dark-text">Фото</span>
+
+                {formImages.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formImages.map((img, i) => (
+                      <div key={i} className="group relative">
+                        <img
+                          src={
+                            img.url.startsWith("http")
+                              ? img.url
+                              : `${API_BASE.replace(/\/api$/, "")}${img.url}`
+                          }
+                          alt={img.alt}
+                          className="h-20 w-20 rounded-lg object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(i)}
+                          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#B42318] text-[10px] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  multiple
+                  onChange={(e) => handleFiles(e.target.files)}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="w-full rounded-[10px] border-2 border-dashed border-gray-300 py-3 text-xs font-bold text-dark-text transition-colors hover:border-primary hover:text-dark disabled:opacity-50"
+                >
+                  {uploading ? "Завантаження..." : "+ Завантажити фото"}
+                </button>
+
+                <div className="flex gap-1.5">
+                  <input
+                    type="url"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addImageByUrl(); } }}
+                    placeholder="https://example.com/photo.jpg"
+                    className="flex-1 rounded-[10px] bg-light-bg px-3 py-2.5 text-[13px] font-semibold text-dark outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={addImageByUrl}
+                    className="rounded-[10px] bg-light-bg px-3 py-2.5 text-xs font-bold text-dark-text transition-colors hover:bg-gray-200"
+                  >
+                    + URL
+                  </button>
+                </div>
+              </div>
+
+              {/* Specs */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs font-bold text-dark-text">Характеристики</span>
+
+                {formSpecs.map((spec, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <input
+                      value={spec.label}
+                      onChange={(e) => updateSpec(i, "label", e.target.value)}
+                      placeholder="Назва"
+                      className="w-2/5 rounded-[10px] bg-light-bg px-3 py-2 text-[13px] font-semibold text-dark outline-none"
+                    />
+                    <input
+                      value={spec.value}
+                      onChange={(e) => updateSpec(i, "value", e.target.value)}
+                      placeholder="Значення"
+                      className="flex-1 rounded-[10px] bg-light-bg px-3 py-2 text-[13px] font-semibold text-dark outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeSpec(i)}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FFE7E7] text-[11px] font-bold text-[#B42318] transition-colors hover:bg-red-200"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+
+                <div className="flex items-end gap-1.5">
+                  <div className="flex w-2/5 flex-col gap-1">
+                    <input
+                      list="spec-labels"
+                      value={newSpecLabel}
+                      onChange={(e) => setNewSpecLabel(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSpec(); } }}
+                      placeholder="Назва характеристики"
+                      className="w-full rounded-[10px] bg-light-bg px-3 py-2 text-[13px] font-semibold text-dark outline-none"
+                    />
+                    <datalist id="spec-labels">
+                      {existingLabels.map((l) => (
+                        <option key={l} value={l} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <input
+                    value={newSpecValue}
+                    onChange={(e) => setNewSpecValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSpec(); } }}
+                    placeholder="Значення"
+                    className="flex-1 rounded-[10px] bg-light-bg px-3 py-2 text-[13px] font-semibold text-dark outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={addSpec}
+                    className="shrink-0 rounded-[10px] bg-light-bg px-3 py-2 text-xs font-bold text-dark-text transition-colors hover:bg-gray-200"
+                  >
+                    + Додати
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Right — booked periods */}

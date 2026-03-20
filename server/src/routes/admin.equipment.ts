@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { z } from "zod";
+import { deleteUploadedFile } from "./admin.upload.js";
 
 export const adminEquipmentRouter = Router();
 
@@ -71,6 +72,14 @@ adminEquipmentRouter.put("/:id", validate(equipmentSchema.partial()), async (req
 
     // Оновити images якщо передано
     if (images) {
+      // Delete old image files that are no longer in the new list
+      const oldImages = await prisma.equipmentImage.findMany({ where: { equipmentId: id } });
+      const newUrls = new Set(images.map((img: { url: string }) => img.url));
+      for (const old of oldImages) {
+        if (!newUrls.has(old.url)) {
+          deleteUploadedFile(old.url);
+        }
+      }
       await prisma.equipmentImage.deleteMany({ where: { equipmentId: id } });
       await prisma.equipmentImage.createMany({
         data: images.map((img: { url: string; alt: string }) => ({
@@ -96,7 +105,13 @@ adminEquipmentRouter.put("/:id", validate(equipmentSchema.partial()), async (req
 /** Видалити техніку */
 adminEquipmentRouter.delete("/:id", async (req, res) => {
   try {
-    await prisma.equipment.delete({ where: { id: req.params.id as string } });
+    const id = req.params.id as string;
+    // Delete image files from disk before removing DB records
+    const images = await prisma.equipmentImage.findMany({ where: { equipmentId: id } });
+    for (const img of images) {
+      deleteUploadedFile(img.url);
+    }
+    await prisma.equipment.delete({ where: { id } });
     res.json({ success: true });
   } catch (e) {
     console.error("DELETE /api/admin/equipment/:id error:", e);

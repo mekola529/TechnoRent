@@ -34,3 +34,6 @@ server/dist-seed
 # Build output
 server/dist
 client/dist
+
+# Uploads
+uploads

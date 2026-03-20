@@ -18,6 +18,7 @@ import { authRouter } from "./routes/auth.js";
 import { adminEquipmentRouter } from "./routes/admin.equipment.js";
 import { adminOrdersRouter } from "./routes/admin.orders.js";
 import { adminOccupancyRouter } from "./routes/admin.occupancy.js";
+import { adminUploadRouter } from "./routes/admin.upload.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -26,6 +27,9 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
 app.use(express.json());
+
+// Serve uploaded images
+app.use("/uploads", express.static(path.resolve(__dirname, "../../uploads")));
 
 // Rate limiting for auth
 const authLimiter = rateLimit({
@@ -68,6 +72,7 @@ app.use("/api/auth", authLimiter, authRouter);
 app.use("/api/admin/equipment", adminEquipmentRouter);
 app.use("/api/admin/orders", adminOrdersRouter);
 app.use("/api/admin/occupancy", adminOccupancyRouter);
+app.use("/api/admin/upload", adminUploadRouter);
 
 // ─── Serve frontend in production ─────────────────
 if (process.env.NODE_ENV === "production") {

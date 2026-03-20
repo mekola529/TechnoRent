@@ -1,6 +1,16 @@
 import type { Equipment, EquipmentType } from "./types";
 import { apiFetch } from "../api/client";
 
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
+
+/** Resolve image URL — prefix relative /uploads/ paths with backend origin */
+function resolveImageUrl(url: string): string {
+  if (url.startsWith("http")) return url;
+  // strip trailing /api to get backend origin (or empty string in dev)
+  const base = API_BASE.replace(/\/api$/, "");
+  return `${base}${url}`;
+}
+
 /**
  * Сервіс доступу до даних техніки.
  * Тепер працює через REST API замість локального масиву.
@@ -47,7 +57,7 @@ function mapEquipment(api: ApiEquipment): Equipment {
     ...api,
     type: mapApiType(api.type),
     specs: api.specs.map((s) => ({ label: s.label, value: s.value })),
-    images: api.images.map((i) => ({ url: i.url, alt: i.alt })),
+    images: api.images.map((i) => ({ url: resolveImageUrl(i.url), alt: i.alt })),
     bookedPeriods: api.bookedPeriods.map((bp) => ({
       from: bp.from.split("T")[0],
       to: bp.to.split("T")[0],

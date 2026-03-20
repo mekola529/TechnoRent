@@ -17,7 +17,7 @@ export default function PopularEquipment() {
       <h2 className="mb-[18px] text-center text-[40px] font-bold text-dark max-lg:text-3xl">
         Популярна техніка
       </h2>
-      <div className="flex w-full flex-wrap justify-around gap-5 pt-3 max-md:flex-col">
+      <div className="flex w-full flex-wrap justify-around gap-5 pt-3 max-md:flex-nowrap max-md:justify-start max-md:overflow-x-auto max-md:scroll-smooth max-md:snap-x max-md:snap-mandatory max-md:-mx-4 max-md:px-4 max-md:pb-4">
         {popular.map((item) => (
           <EquipmentCard key={item.id} item={item} maxWidth />
         ))}

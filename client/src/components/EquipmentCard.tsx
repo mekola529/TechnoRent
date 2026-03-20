@@ -10,7 +10,7 @@ interface EquipmentCardProps {
 
 export default function EquipmentCard({ item, maxWidth }: EquipmentCardProps) {
   return (
-    <article className={`flex flex-col gap-3 rounded-2xl border border-border bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.08)] transition-shadow hover:shadow-lg${maxWidth ? ' w-[281px] max-md:w-full' : ''}`}>
+    <article className={`flex flex-col gap-3 rounded-2xl border border-border bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.08)] transition-shadow hover:shadow-lg${maxWidth ? ' w-[281px] max-md:w-[260px] max-md:shrink-0 max-md:snap-center' : ''}`}>
       <div className="h-[180px] w-full shrink-0 overflow-hidden rounded-xl bg-[#F5F5F5]">
         {item.images[0]?.url && (
           <img

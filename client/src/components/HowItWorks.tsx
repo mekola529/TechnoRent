@@ -1,7 +1,7 @@
 const steps = [
-  { number: "01", text: "Залишаєте заявку" },
-  { number: "02", text: "Ми зв'язуємося з вами" },
-  { number: "03", text: "Техніка виїжджає на об'єкт" },
+  { number: "01", text: "Залишаєте заявку", description: "Оберіть потрібну техніку на сайті або зателефонуйте нам. Заповніть коротку форму — це займе лише хвилину." },
+  { number: "02", text: "Ми зв'язуємося з вами", description: "Наш менеджер зателефонує протягом 30 хвилин, уточнить деталі та підбере оптимальний варіант під ваш проєкт." },
+  { number: "03", text: "Техніка виїжджає на об'єкт", description: "Доставляємо техніку на ваш об'єкт у зручний час. Працюємо по всій Львівській області без вихідних." },
 ];
 
 export default function HowItWorks() {
@@ -20,6 +20,7 @@ export default function HowItWorks() {
               {step.number}
             </span>
             <p className="text-xl font-bold text-dark">{step.text}</p>
+            <p className="text-[14px] leading-[1.5] font-medium text-dark-text">{step.description}</p>
           </div>
         ))}
       </div>

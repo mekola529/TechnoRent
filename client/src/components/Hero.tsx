@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { useOrderModal } from "../context/OrderModalContext";
 
 export default function Hero() {
+  const { openOrderModal } = useOrderModal();
   return (
     <section
       aria-label="Оренда спецтехніки у Львові"
@@ -34,12 +36,12 @@ export default function Hero() {
           >
             Переглянути техніку
           </Link>
-          <a
-            href="#order"
+          <button
+            onClick={() => openOrderModal()}
             className="rounded-full border border-white px-[22px] py-3 text-sm font-bold text-white transition-colors hover:bg-white/10"
           >
             Залишити заявку
-          </a>
+          </button>
         </div>
       </div>
     </section>

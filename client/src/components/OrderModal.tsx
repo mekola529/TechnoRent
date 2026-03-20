@@ -2,17 +2,20 @@ import { useState } from "react";
 import { createOrder } from "../data/equipment.service";
 
 interface OrderModalProps {
-  equipmentName: string;
-  equipmentId: string;
+  equipmentName?: string;
+  equipmentId?: string;
   onClose: () => void;
 }
 
 export default function OrderModal({ equipmentName, equipmentId, onClose }: OrderModalProps) {
+  const isDetailed = !!equipmentId;
+
   const [form, setForm] = useState({
     name: "",
     phone: "+380",
     email: "",
-    date: "",
+    dateFrom: "",
+    dateTo: "",
     address: "",
     comment: "",
   });
@@ -34,10 +37,11 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
         customerName: form.name,
         phone: form.phone,
         email: form.email || undefined,
-        date: form.date || undefined,
+        dateFrom: form.dateFrom || undefined,
+        dateTo: form.dateTo || undefined,
         address: form.address || undefined,
         comment: form.comment || undefined,
-        equipmentId,
+        ...(equipmentId ? { equipmentId } : {}),
       });
       setSubmitted(true);
     } catch (e) {
@@ -53,7 +57,7 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-[640px] overflow-y-auto rounded-2xl border border-border bg-white p-6 font-sans shadow-xl"
+        className={`max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-border bg-white p-6 font-sans shadow-xl ${isDetailed ? "max-w-[640px]" : "max-w-[420px]"}`}
         onClick={(e) => e.stopPropagation()}
       >
         {submitted ? (
@@ -73,7 +77,9 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
         ) : (
           <>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-[28px] font-bold text-dark">Замовлення техніки</h2>
+              <h2 className="text-[28px] font-bold text-dark">
+                {isDetailed ? "Замовлення техніки" : "Залишити заявку"}
+              </h2>
               <button
                 onClick={onClose}
                 className="text-base font-bold text-dark-text transition-colors hover:text-dark"
@@ -82,12 +88,14 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
               </button>
             </div>
 
-            <div className="mb-4 flex flex-col gap-1.5 rounded-[10px] bg-light-bg p-3">
-              <span className="text-xs font-bold text-dark-text">Джерело виклику</span>
-              <span className="text-sm font-semibold text-dark">
-                Сторінка: Техніка / {equipmentName}
-              </span>
-            </div>
+            {equipmentName && (
+              <div className="mb-4 flex flex-col gap-1.5 rounded-[10px] bg-light-bg p-3">
+                <span className="text-xs font-bold text-dark-text">Техніка</span>
+                <span className="text-sm font-semibold text-dark">
+                  {equipmentName}
+                </span>
+              </div>
+            )}
 
             <div className="flex flex-col gap-3">
               <Field label="Ім'я" required>
@@ -98,18 +106,26 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
                 <Input placeholder="+380" value={form.phone} onChange={(v) => update("phone", v)} type="tel" />
               </Field>
 
-              <div className="flex gap-2.5">
-                <Field label="Пошта (необов'язково)" className="flex-1">
-                  <Input placeholder="name@email.com" value={form.email} onChange={(v) => update("email", v)} type="email" />
-                </Field>
-                <Field label="Дата (необов'язково)" className="flex-1">
-                  <Input placeholder="Оберіть дату" value={form.date} onChange={(v) => update("date", v)} type="date" />
-                </Field>
-              </div>
+              {isDetailed && (
+                <>
+                  <Field label="Пошта (необов'язково)">
+                    <Input placeholder="name@email.com" value={form.email} onChange={(v) => update("email", v)} type="email" />
+                  </Field>
 
-              <Field label="Адреса (необов'язково)">
-                <Input placeholder="Львів, вул..." value={form.address} onChange={(v) => update("address", v)} />
-              </Field>
+                  <div className="flex gap-2.5">
+                    <Field label="Дата від (необов'язково)" className="flex-1">
+                      <Input placeholder="" value={form.dateFrom} onChange={(v) => update("dateFrom", v)} type="date" />
+                    </Field>
+                    <Field label="Дата до (необов'язково)" className="flex-1">
+                      <Input placeholder="" value={form.dateTo} onChange={(v) => update("dateTo", v)} type="date" />
+                    </Field>
+                  </div>
+
+                  <Field label="Адреса (необов'язково)">
+                    <Input placeholder="Львів, вул..." value={form.address} onChange={(v) => update("address", v)} />
+                  </Field>
+                </>
+              )}
 
               <Field label="Коментар (необов'язково)">
                 <textarea
@@ -141,7 +157,7 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
                 disabled={sending}
                 className="flex-1 rounded-full bg-primary px-3.5 py-3 text-[13px] font-bold text-dark transition-opacity hover:opacity-90 disabled:opacity-60"
               >
-                {sending ? "Надсилання..." : "Надіслати замовлення"}
+                {sending ? "Надсилання..." : isDetailed ? "Надіслати замовлення" : "Надіслати заявку"}
               </button>
             </div>
           </>

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { OrderModalProvider } from "./context/OrderModalContext";
 import HomePage from "./pages/HomePage";
 import CatalogPage from "./pages/CatalogPage";
 import EquipmentDetailPage from "./pages/EquipmentDetailPage";
@@ -14,6 +15,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+      <OrderModalProvider>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/catalog" element={<CatalogPage />} />
@@ -34,6 +36,7 @@ function App() {
             <Route path="occupancy" element={<AdminOccupancyPage />} />
           </Route>
         </Routes>
+      </OrderModalProvider>
       </AuthProvider>
     </BrowserRouter>
   );

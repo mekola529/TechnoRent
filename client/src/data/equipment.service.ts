@@ -129,10 +129,11 @@ export async function createOrder(data: {
   customerName: string;
   phone: string;
   email?: string;
-  date?: string;
+  dateFrom?: string;
+  dateTo?: string;
   address?: string;
   comment?: string;
-  equipmentId: string;
+  equipmentId?: string;
 }): Promise<{ id: string }> {
   return apiFetch("/orders", {
     method: "POST",

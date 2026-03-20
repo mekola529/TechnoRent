@@ -34,8 +34,8 @@ interface OrderOption {
   id: string;
   customerName: string;
   phone: string;
-  equipmentId: string;
-  equipment: { name: string };
+  equipmentId: string | null;
+  equipment: { name: string } | null;
   status: string;
 }
 
@@ -298,11 +298,11 @@ export default function AdminOccupancyPage() {
     <>
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
-        <h1 className="text-[32px] font-bold text-dark">Керування зайнятістю</h1>
+        <h1 className="text-2xl font-bold text-dark sm:text-[32px]">Керування зайнятістю</h1>
       </div>
 
       {/* ── Content: Calendar + List ── */}
-      <div className="flex flex-1 gap-3">
+      <div className="flex flex-1 flex-col gap-3 lg:flex-row">
         {/* ── Calendar card ── */}
         <div className="flex flex-1 flex-col gap-3 rounded-[14px] border border-border bg-white p-4">
           {/* Calendar top */}
@@ -372,7 +372,7 @@ export default function AdminOccupancyPage() {
               return (
                 <div
                   key={day}
-                  className="relative flex min-h-[64px] flex-col gap-1 rounded-[10px] p-2 cursor-default"
+                  className="relative flex min-h-[48px] flex-col gap-0.5 rounded-[10px] p-1.5 cursor-default sm:min-h-[64px] sm:gap-1 sm:p-2"
                   style={{ backgroundColor: cellBg }}
                   onMouseEnter={() => multipleItems && setHoveredDay(day)}
                   onMouseLeave={() => setHoveredDay(null)}
@@ -426,7 +426,7 @@ export default function AdminOccupancyPage() {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-2.5 pt-1">
+          <div className="flex flex-wrap items-center gap-2 pt-1 sm:gap-2.5">
             {(["booked", "rent", "maintenance", "free"] as PeriodStatus[]).map((s) => {
               const c = statusColor(s);
               return (
@@ -443,7 +443,7 @@ export default function AdminOccupancyPage() {
         </div>
 
         {/* ── Schedule list (right panel) ── */}
-        <div className="flex w-[420px] shrink-0 flex-col gap-3 rounded-[14px] border border-border bg-white p-4">
+        <div className="flex w-full shrink-0 flex-col gap-3 rounded-[14px] border border-border bg-white p-4 lg:w-[420px]">
           <h2 className="text-lg font-bold text-dark">Заявки та зайнятість</h2>
 
           {/* Equipment filter */}
@@ -494,7 +494,7 @@ export default function AdminOccupancyPage() {
                   <span className="text-[13px] font-bold text-dark">
                     {p.equipment.name} • {formatDateRange(p.from, p.to)}
                   </span>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-xs font-semibold" style={{ color: sc.text }}>
                       Статус: {statusLabel(st)}
                       {p.order ? ` (${p.order.customerName})` : ""}
@@ -534,7 +534,7 @@ export default function AdminOccupancyPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <form
             onSubmit={handleSubmit}
-            className="flex w-[460px] flex-col gap-4 rounded-2xl bg-white p-6 shadow-xl"
+            className="flex w-[calc(100vw-2rem)] max-w-[460px] flex-col gap-4 rounded-2xl bg-white p-4 shadow-xl sm:p-6"
           >
             <h2 className="text-xl font-bold text-dark">
               {editId ? "Редагувати період" : "Додати зайнятість"}
@@ -581,7 +581,7 @@ export default function AdminOccupancyPage() {
             {/* Occupant source */}
             <div className="flex flex-col gap-2">
               <span className="text-sm font-semibold text-dark">Ким зайнята</span>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(["none", "order", "manual"] as OccupantSource[]).map((src) => {
                   const labels = { none: "Не вказано", order: "Із заявки", manual: "Вручну" };
                   return (
@@ -615,7 +615,7 @@ export default function AdminOccupancyPage() {
                       ...form,
                       orderId: ordId,
                       customerName: ord?.customerName ?? "",
-                      equipmentId: ord?.equipmentId ?? form.equipmentId,
+                    equipmentId: ord?.equipmentId ?? form.equipmentId,
                     });
                   }}
                   className="rounded-lg border border-border px-3 py-2 text-sm"
@@ -623,7 +623,7 @@ export default function AdminOccupancyPage() {
                   <option value="">— Оберіть заявку —</option>
                   {processedOrders.map((o) => (
                     <option key={o.id} value={o.id}>
-                      {o.customerName} — {o.equipment.name} ({o.phone})
+                      {o.customerName} — {o.equipment?.name ?? "Загальна заявка"} ({o.phone})
                     </option>
                   ))}
                 </select>
@@ -643,7 +643,7 @@ export default function AdminOccupancyPage() {
             {/* Note type selector */}
             <div className="flex flex-col gap-2">
               <span className="text-sm font-semibold text-dark">Тип зайнятості</span>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(["booked", "rent", "maintenance"] as const).map((t) => {
                   const labels = { booked: "📋 Заброньовано", rent: "🔧 Оренда", maintenance: "⚙️ Техобслуговування" };
                   const activeStyles = {

@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { useOrderModal } from "../context/OrderModalContext";
 
 export default function Header() {
+  const { openOrderModal } = useOrderModal();
   return (
     <header className="w-full border-b border-border bg-white">
       <div className="mx-auto flex items-center justify-between px-[120px] py-4 max-xl:px-8 max-md:px-4">
@@ -35,12 +37,12 @@ export default function Header() {
           >
             +380 (67) 000-00-00
           </a>
-          <a
-            href="#order"
+          <button
+            onClick={() => openOrderModal()}
             className="rounded-full bg-primary px-5 py-3 text-[13px] font-bold text-dark transition-opacity hover:opacity-90"
           >
             Замовити техніку
-          </a>
+          </button>
         </div>
       </div>
     </header>

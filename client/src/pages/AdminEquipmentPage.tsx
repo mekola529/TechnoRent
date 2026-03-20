@@ -139,11 +139,11 @@ export default function AdminEquipmentPage() {
   return (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-[32px] font-bold text-dark">Список техніки</h1>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-dark sm:text-[32px]">Список техніки</h1>
         <button
           onClick={openNew}
-          className="rounded-full bg-primary px-3.5 py-2.5 text-[13px] font-bold text-dark transition-opacity hover:opacity-90"
+          className="w-full rounded-full bg-primary px-3.5 py-2.5 text-[13px] font-bold text-dark transition-opacity hover:opacity-90 sm:w-auto"
         >
           + Додати нову техніку
         </button>
@@ -154,7 +154,7 @@ export default function AdminEquipmentPage() {
         <h2 className="text-[22px] font-bold text-dark">Список техніки</h2>
 
         {/* Header row */}
-        <div className="flex items-center gap-2 rounded-lg bg-light-bg px-2.5 py-2">
+        <div className="hidden items-center gap-2 rounded-lg bg-light-bg px-2.5 py-2 sm:flex">
           <span className="flex-1 text-xs font-bold text-dark-text">Назва</span>
           <span className="w-24 text-xs font-bold text-dark-text">Ціна/год</span>
           <span className="w-24 text-xs font-bold text-dark-text">Статус</span>
@@ -176,38 +176,45 @@ export default function AdminEquipmentPage() {
             return (
               <div
                 key={item.id}
-                className="flex items-center gap-2 rounded-lg border border-[#EFEFEF] bg-white px-2.5 py-2.5"
+                className="flex flex-col gap-2 rounded-lg border border-[#EFEFEF] bg-white px-2.5 py-2.5 sm:flex-row sm:items-center sm:gap-2"
               >
-                <span className="flex-1 text-[13px] font-semibold text-dark">
-                  {item.name}
-                </span>
-                <span className="w-24 text-[13px] font-semibold text-dark-text">
+                <div className="flex items-center justify-between sm:flex-1">
+                  <span className="text-[13px] font-semibold text-dark">
+                    {item.name}
+                  </span>
+                  <span className="text-[13px] font-semibold text-dark-text sm:hidden">
+                    {item.pricePerHour} грн/год
+                  </span>
+                </div>
+                <span className="hidden w-24 text-[13px] font-semibold text-dark-text sm:block">
                   {item.pricePerHour}
                 </span>
-                <span className="w-24">
-                  {hasBooked ? (
-                    <span className="text-xs font-bold text-[#B42318]">
-                      Зайнято
-                    </span>
-                  ) : (
-                    <span className="text-xs font-bold text-[#1F7A1F]">
-                      Вільно
-                    </span>
-                  )}
-                </span>
-                <div className="flex w-44 gap-1.5">
-                  <button
-                    onClick={() => openEdit(item)}
-                    className="rounded-full bg-light-bg px-2.5 py-1.5 text-[11px] font-bold text-dark transition-colors hover:bg-gray-200"
-                  >
-                    Редагувати
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id, item.name)}
-                    className="rounded-full bg-[#FFE7E7] px-2.5 py-1.5 text-[11px] font-bold text-[#B42318] transition-colors hover:bg-red-200"
-                  >
-                    Видалити
-                  </button>
+                <div className="flex items-center justify-between sm:contents">
+                  <span className="sm:w-24">
+                    {hasBooked ? (
+                      <span className="text-xs font-bold text-[#B42318]">
+                        Зайнято
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-[#1F7A1F]">
+                        Вільно
+                      </span>
+                    )}
+                  </span>
+                  <div className="flex gap-1.5 sm:w-44">
+                    <button
+                      onClick={() => openEdit(item)}
+                      className="rounded-full bg-light-bg px-2.5 py-1.5 text-[11px] font-bold text-dark transition-colors hover:bg-gray-200"
+                    >
+                      Редагувати
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id, item.name)}
+                      className="rounded-full bg-[#FFE7E7] px-2.5 py-1.5 text-[11px] font-bold text-[#B42318] transition-colors hover:bg-red-200"
+                    >
+                      Видалити
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -236,7 +243,7 @@ export default function AdminEquipmentPage() {
           </div>
 
           {/* Form grid */}
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             {/* Left fields */}
             <div className="flex flex-1 flex-col gap-2">
               <Field label="Назва" value={formName} onChange={setFormName} />

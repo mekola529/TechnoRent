@@ -58,6 +58,7 @@ export default function ContactsPage() {
       </Helmet>
 
       <Header />
+      <MobileTabBar />
 
       {/* Hero */}
       <section className="w-full bg-dark px-[120px] py-16 max-xl:px-8 max-md:px-4 max-md:py-10">
@@ -142,7 +143,7 @@ export default function ContactsPage() {
       </section>
 
       <Footer />
-      <MobileTabBar />
+      
     </div>
   );
 }

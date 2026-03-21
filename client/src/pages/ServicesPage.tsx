@@ -59,6 +59,7 @@ export default function ServicesPage() {
       </Helmet>
 
       <Header />
+      <MobileTabBar />
 
       {/* Hero */}
       <section className="w-full bg-dark px-[120px] py-16 max-xl:px-8 max-md:px-4 max-md:py-10">
@@ -133,7 +134,7 @@ export default function ServicesPage() {
       </section>
 
       <Footer />
-      <MobileTabBar />
+      
     </div>
   );
 }

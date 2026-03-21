@@ -52,6 +52,7 @@ export default function HomePage() {
       </Helmet>
 
       <Header />
+      <MobileTabBar />
       <main>
         <Hero />
         <HowItWorks />
@@ -60,7 +61,6 @@ export default function HomePage() {
         <CallToAction />
       </main>
       <Footer />
-      <MobileTabBar />
     </div>
   );
 }

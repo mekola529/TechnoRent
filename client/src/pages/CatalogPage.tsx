@@ -69,6 +69,7 @@ export default function CatalogPage() {
         canonical="https://technorent.ua/catalog"
       />
       <Header />
+      <MobileTabBar />
 
       {/* Title */}
       <section className="flex flex-col gap-2.5 px-[120px] pt-6 max-xl:px-8 max-md:px-4">
@@ -181,7 +182,6 @@ export default function CatalogPage() {
 
       <div className="mt-16" />
       <Footer />
-      <MobileTabBar />
     </div>
   );
 }

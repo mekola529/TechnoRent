@@ -57,11 +57,11 @@ export default function EquipmentDetailPage() {
     return (
       <div className="flex min-h-screen flex-col bg-white font-sans">
         <Header />
+        <MobileTabBar />
         <div className="flex flex-1 items-center justify-center py-20">
           <p className="text-lg font-medium text-dark-text">Завантаження...</p>
         </div>
         <Footer />
-        <MobileTabBar />
       </div>
     );
   }
@@ -70,6 +70,7 @@ export default function EquipmentDetailPage() {
     return (
       <div className="flex min-h-screen flex-col bg-white font-sans">
         <Header />
+        <MobileTabBar />
         <div className="flex flex-1 flex-col items-center justify-center gap-4 py-20">
           <h1 className="text-3xl font-bold text-dark">Техніку не знайдено</h1>
           <p className="text-dark-text">Перевірте URL або поверніться до каталогу.</p>
@@ -78,7 +79,6 @@ export default function EquipmentDetailPage() {
           </Link>
         </div>
         <Footer />
-        <MobileTabBar />
       </div>
     );
   }
@@ -129,6 +129,7 @@ export default function EquipmentDetailPage() {
       </Helmet>
 
       <Header />
+      <MobileTabBar />
 
       {/* Breadcrumb */}
       <nav aria-label="Навігація" className="px-[120px] pt-2 max-xl:px-8 max-md:px-4">
@@ -220,7 +221,6 @@ export default function EquipmentDetailPage() {
 
       <div className="mt-16" />
       <Footer />
-      <MobileTabBar />
 
       {showModal && (
         <OrderModal

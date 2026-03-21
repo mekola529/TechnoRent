@@ -4,7 +4,7 @@ import { useOrderModal } from "../context/OrderModalContext";
 export default function Header() {
   const { openOrderModal } = useOrderModal();
   return (
-    <header className="w-full border-b border-border bg-white">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-white">
       <div className="mx-auto flex items-center justify-between px-[120px] py-4 max-xl:px-8 max-md:px-4">
         {/* Logo */}
         <Link to="/" className="text-[28px] font-bold">

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { createOrder } from "../data/equipment.service";
 
 interface OrderModalProps {
@@ -27,6 +28,27 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
   const update = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
+  /* ── Body scroll lock (Safari-compatible) ── */
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    const { style } = document.body;
+
+    style.position = "fixed";
+    style.top = `-${scrollY}px`;
+    style.left = "0";
+    style.right = "0";
+    style.overflow = "hidden";
+
+    return () => {
+      style.position = "";
+      style.top = "";
+      style.left = "";
+      style.right = "";
+      style.overflow = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   const handleSubmit = async () => {
     if (!form.name.trim() || form.phone.length < 5) return;
     setSending(true);
@@ -51,13 +73,13 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
     }
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"
       onClick={onClose}
     >
       <div
-        className={`max-h-[90vh] w-full overflow-x-hidden overflow-y-auto rounded-2xl border border-border bg-white p-5 font-sans shadow-xl max-sm:p-4 ${isDetailed ? "max-w-[640px]" : "max-w-[420px]"}`}
+        className={`max-h-[90dvh] w-full overflow-x-hidden overflow-y-auto rounded-2xl border border-border bg-white p-5 font-sans shadow-xl max-sm:p-4 ${isDetailed ? "max-w-[640px]" : "max-w-[420px]"}`}
         onClick={(e) => e.stopPropagation()}
       >
         {submitted ? (
@@ -163,7 +185,8 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

@@ -70,15 +70,16 @@ export default function MobileTabBar() {
 
   return (
     <nav
-      className="fixed left-3 right-3 z-50 mx-auto max-w-md rounded-full bg-[#111]/92 shadow-[0_4px_24px_rgba(0,0,0,.45)] backdrop-blur-xl md:hidden"
+      className="fixed left-2.5 right-2.5 z-50 mx-auto max-w-md rounded-full bg-[#111]/92 backdrop-blur-xl md:hidden"
       style={{
-        bottom: "max(12px, env(safe-area-inset-bottom))",
+        bottom: "max(6px, calc(env(safe-area-inset-bottom) - 6px))",
+        boxShadow: "0 6px 32px 0 rgba(0,0,0,.35), 0 1.5px 8px 0 rgba(0,0,0,.18)",
       }}
     >
       <div
         className="flex items-center justify-around"
         style={{
-          padding: compact ? "6px 4px" : "10px 6px",
+          padding: compact ? "5px 2px" : "9px 4px",
           transition: "padding .3s ease",
         }}
       >
@@ -89,15 +90,15 @@ export default function MobileTabBar() {
             end={tab.to === "/"}
             className={({ isActive }) => {
               const base =
-                "relative flex items-center justify-center font-semibold transition-all duration-300 ease-out";
+                "relative flex min-w-0 items-center justify-center font-semibold transition-all duration-300 ease-out";
               if (compact) {
-                return `${base} px-3 py-1 text-[11px] tracking-wide ${
+                return `${base} px-2 py-1 text-[10.5px] tracking-wide ${
                   isActive
                     ? "text-primary"
                     : "text-white/50 active:text-white/80"
                 }`;
               }
-              return `${base} flex-col gap-0.5 rounded-full px-3.5 py-1.5 text-[10px] ${
+              return `${base} flex-col gap-0.5 rounded-full px-3 py-1.5 text-[10px] ${
                 isActive
                   ? "bg-primary text-dark"
                   : "text-white/60 active:scale-95 active:text-white/90"

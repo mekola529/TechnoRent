@@ -9,3 +9,18 @@
   --color-border: #EAEAEA;
 }
 
+/* ── Global overflow guard ── */
+html,
+body {
+  overflow-x: hidden;
+}
+
+/* ── Safari input zoom fix: ensure 16px minimum ── */
+@media screen and (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+

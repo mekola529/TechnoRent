@@ -54,7 +54,7 @@ export default function CallToAction() {
               placeholder="Введіть імʼя"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="rounded-[10px] border border-border bg-[#F9FAFB] px-3 py-3 text-[13px] font-medium text-dark-text placeholder:text-[#98A2B3] outline-none focus:ring-2 focus:ring-primary"
+              className="w-full max-w-full rounded-[10px] border border-border bg-[#F9FAFB] px-3 py-3 text-base font-medium text-dark-text placeholder:text-[#98A2B3] outline-none focus:ring-2 focus:ring-primary md:text-[13px]"
             />
             <label className="text-xs font-bold text-dark-text">Телефон</label>
             <input
@@ -62,7 +62,7 @@ export default function CallToAction() {
               placeholder="+380"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="rounded-[10px] border border-border bg-[#F9FAFB] px-3 py-3 text-[13px] font-medium text-dark-text placeholder:text-[#98A2B3] outline-none focus:ring-2 focus:ring-primary"
+              className="w-full max-w-full rounded-[10px] border border-border bg-[#F9FAFB] px-3 py-3 text-base font-medium text-dark-text placeholder:text-[#98A2B3] outline-none focus:ring-2 focus:ring-primary md:text-[13px]"
             />
             {error && (
               <p className="text-xs font-semibold text-red-500">{error}</p>

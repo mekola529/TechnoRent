@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 const tabs = [
@@ -40,26 +41,88 @@ const tabs = [
   },
 ];
 
+/** Scroll threshold (px) after which the bar collapses */
+const SCROLL_THRESHOLD = 60;
+
 export default function MobileTabBar() {
+  const [compact, setCompact] = useState(false);
+  const lastY = useRef(0);
+  const ticking = useRef(false);
+
+  useEffect(() => {
+    function onScroll() {
+      if (ticking.current) return;
+      ticking.current = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        if (y > SCROLL_THRESHOLD && y > lastY.current) {
+          setCompact(true);
+        } else if (y < lastY.current) {
+          setCompact(false);
+        }
+        lastY.current = y;
+        ticking.current = false;
+      });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <nav className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-full bg-dark/90 px-2 py-2 shadow-lg backdrop-blur-md md:hidden"
-         style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom))" }}>
-      <div className="flex items-center justify-around">
+    <nav
+      className="fixed left-3 right-3 z-50 mx-auto max-w-md rounded-full bg-[#111]/92 shadow-[0_4px_24px_rgba(0,0,0,.45)] backdrop-blur-xl md:hidden"
+      style={{
+        bottom: "max(12px, env(safe-area-inset-bottom))",
+      }}
+    >
+      <div
+        className="flex items-center justify-around"
+        style={{
+          padding: compact ? "6px 4px" : "10px 6px",
+          transition: "padding .3s ease",
+        }}
+      >
         {tabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}
             end={tab.to === "/"}
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 rounded-full px-3.5 py-1.5 text-[10px] font-semibold transition-all ${
+            className={({ isActive }) => {
+              const base =
+                "relative flex items-center justify-center font-semibold transition-all duration-300 ease-out";
+              if (compact) {
+                return `${base} px-3 py-1 text-[11px] tracking-wide ${
+                  isActive
+                    ? "text-primary"
+                    : "text-white/50 active:text-white/80"
+                }`;
+              }
+              return `${base} flex-col gap-0.5 rounded-full px-3.5 py-1.5 text-[10px] ${
                 isActive
                   ? "bg-primary text-dark"
-                  : "text-gray-300 active:scale-95"
-              }`
-            }
+                  : "text-white/60 active:scale-95 active:text-white/90"
+              }`;
+            }}
           >
-            {tab.icon}
-            {tab.label}
+            {() => (
+              <>
+                {/* Icon — expanded only */}
+                <span
+                  className="overflow-hidden transition-all duration-300"
+                  style={{
+                    maxHeight: compact ? 0 : 20,
+                    opacity: compact ? 0 : 1,
+                    marginBottom: compact ? 0 : 2,
+                  }}
+                  aria-hidden
+                >
+                  {tab.icon}
+                </span>
+
+                {/* Label */}
+                <span className="whitespace-nowrap">{tab.label}</span>
+              </>
+            )}
           </NavLink>
         ))}
       </div>

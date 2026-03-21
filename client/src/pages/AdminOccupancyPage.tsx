@@ -531,10 +531,10 @@ export default function AdminOccupancyPage() {
 
       {/* ── Modal (create / edit) ── */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <form
             onSubmit={handleSubmit}
-            className="flex w-[calc(100vw-2rem)] max-w-[460px] flex-col gap-4 rounded-2xl bg-white p-4 shadow-xl sm:p-6"
+            className="flex w-full max-w-[460px] flex-col gap-4 overflow-x-hidden rounded-2xl bg-white p-4 shadow-xl sm:p-6"
           >
             <h2 className="text-xl font-bold text-dark">
               {editId ? "Редагувати період" : "Додати зайнятість"}

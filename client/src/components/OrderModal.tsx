@@ -57,7 +57,7 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
       onClick={onClose}
     >
       <div
-        className={`max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-border bg-white p-6 font-sans shadow-xl ${isDetailed ? "max-w-[640px]" : "max-w-[420px]"}`}
+        className={`max-h-[90vh] w-full overflow-x-hidden overflow-y-auto rounded-2xl border border-border bg-white p-5 font-sans shadow-xl max-sm:p-4 ${isDetailed ? "max-w-[640px]" : "max-w-[420px]"}`}
         onClick={(e) => e.stopPropagation()}
       >
         {submitted ? (
@@ -112,11 +112,11 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
                     <Input placeholder="name@email.com" value={form.email} onChange={(v) => update("email", v)} type="email" />
                   </Field>
 
-                  <div className="flex gap-2.5">
-                    <Field label="Дата від (необов'язково)" className="flex-1">
+                  <div className="flex gap-2.5 max-[420px]:flex-col">
+                    <Field label="Дата від (необов'язково)" className="min-w-0 flex-1">
                       <Input placeholder="" value={form.dateFrom} onChange={(v) => update("dateFrom", v)} type="date" />
                     </Field>
-                    <Field label="Дата до (необов'язково)" className="flex-1">
+                    <Field label="Дата до (необов'язково)" className="min-w-0 flex-1">
                       <Input placeholder="" value={form.dateTo} onChange={(v) => update("dateTo", v)} type="date" />
                     </Field>
                   </div>
@@ -132,7 +132,7 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
                   placeholder="Деталі замовлення..."
                   value={form.comment}
                   onChange={(e) => update("comment", e.target.value)}
-                  className="h-[90px] w-full resize-none rounded-[10px] border border-border bg-white px-3.5 py-3 text-[13px] font-medium text-dark outline-none placeholder:text-[#8A8A8A] focus:border-primary"
+                  className="h-[90px] w-full max-w-full resize-none rounded-[10px] border border-border bg-white px-3.5 py-3 text-base font-medium text-dark outline-none placeholder:text-[#8A8A8A] focus:border-primary md:text-[13px]"
                 />
               </Field>
 
@@ -206,7 +206,7 @@ function Input({
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-[10px] border border-border bg-white px-3.5 py-3 text-[13px] font-medium text-dark outline-none placeholder:text-[#8A8A8A] focus:border-primary"
+      className="w-full max-w-full rounded-[10px] border border-border bg-white px-3.5 py-3 text-base font-medium text-dark outline-none placeholder:text-[#8A8A8A] focus:border-primary md:text-[13px]"
     />
   );
 }

@@ -10,7 +10,10 @@ interface EquipmentCardProps {
 
 export default function EquipmentCard({ item, maxWidth }: EquipmentCardProps) {
   return (
-    <article className={`flex flex-col gap-3 rounded-2xl border border-border bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.08)] transition-shadow hover:shadow-lg${maxWidth ? ' w-[281px] max-md:w-[260px] max-md:shrink-0 max-md:snap-center' : ''}`}>
+    <Link
+      to={`/catalog/${item.slug}`}
+      className={`flex flex-col gap-3 rounded-2xl border border-border bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.08)] transition-shadow hover:shadow-lg${maxWidth ? ' w-[281px] max-md:w-[260px] max-md:shrink-0 max-md:snap-center' : ''}`}
+    >
       <div className="h-[180px] w-full shrink-0 overflow-hidden rounded-xl bg-[#F5F5F5]">
         {item.images[0]?.url && (
           <img
@@ -32,12 +35,9 @@ export default function EquipmentCard({ item, maxWidth }: EquipmentCardProps) {
       <p className="text-[15px] font-semibold text-dark-text">
         {formatPrice(item.pricePerHour)}
       </p>
-      <Link
-        to={`/catalog/${item.slug}`}
-        className="inline-flex w-fit items-center justify-center rounded-full bg-primary px-4 py-[11px] text-[13px] font-bold text-dark transition-opacity hover:opacity-90"
-      >
+      <span className="inline-flex w-fit items-center justify-center rounded-full bg-primary px-4 py-[11px] text-[13px] font-bold text-dark transition-opacity hover:opacity-90">
         Детальніше
-      </Link>
-    </article>
+      </span>
+    </Link>
   );
 }

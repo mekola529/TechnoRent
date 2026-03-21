@@ -11,7 +11,7 @@ export default function WhyChooseUs() {
       {/* Left — image with title overlay */}
       <div className="relative h-[420px] w-full overflow-hidden rounded-[18px] max-lg:h-[280px]">
         <img
-          src="https://images.unsplash.com/photo-1661120212012-aca40671ba47?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800"
+          src="https://bf-logistic.ua/images/category/bud-teh/1075462460_1075462460.jpg.pagespeed.ce.juQWDfrMuV.jpg"
           alt="Спецтехніка TechnoRent на будівельному майданчику"
           className="h-full w-full object-cover"
           loading="lazy"

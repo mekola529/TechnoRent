@@ -1,5 +1,15 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { apiFetch } from "../api/client";
+import {
+  AdminPageHeader,
+  AdminButton,
+  AdminCard,
+  AdminFilterBar,
+  AdminSelect,
+  StatusBadge,
+  ConfirmModal,
+} from "../components/admin";
+import { AdminInput, AdminTextarea } from "../components/admin/AdminInput";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -48,6 +58,13 @@ export default function AdminEquipmentPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ApiEquipment | null>(null);
 
+  /* filters */
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("");
+
+  /* confirm modal */
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+
   /* form state */
   const [formName, setFormName] = useState("");
   const [formSlug, setFormSlug] = useState("");
@@ -65,6 +82,9 @@ export default function AdminEquipmentPage() {
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /* actions dropdown */
+  const [openActionId, setOpenActionId] = useState<string | null>(null);
+
   function addImageByUrl() {
     const url = imageUrl.trim();
     if (!url) return;
@@ -72,7 +92,6 @@ export default function AdminEquipmentPage() {
     setImageUrl("");
   }
 
-  /** Upload image via FormData (not apiFetch — needs multipart) */
   async function uploadImage(file: File): Promise<ImageItem> {
     const fd = new FormData();
     fd.append("image", file);
@@ -103,7 +122,6 @@ export default function AdminEquipmentPage() {
     }
   }
 
-  /* Collect all unique spec labels used across equipment */
   const existingLabels = Array.from(
     new Set(items.flatMap((it) => it.specs.map((s) => s.label)))
   ).sort();
@@ -127,7 +145,6 @@ export default function AdminEquipmentPage() {
 
   async function removeImage(index: number) {
     const img = formImages[index];
-    // Delete from server if it's an uploaded file
     if (img.url.startsWith("/uploads/")) {
       const token = localStorage.getItem("admin_token");
       try {
@@ -140,7 +157,7 @@ export default function AdminEquipmentPage() {
           body: JSON.stringify({ url: img.url }),
         });
       } catch {
-        // ignore — file cleanup is best-effort
+        // best-effort
       }
     }
     setFormImages((prev) => prev.filter((_, i) => i !== index));
@@ -151,8 +168,8 @@ export default function AdminEquipmentPage() {
     try {
       const data = await apiFetch<ApiEquipment[]>("/equipment");
       setItems(data);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // silently fail
     } finally {
       setLoading(false);
     }
@@ -161,6 +178,14 @@ export default function AdminEquipmentPage() {
   useEffect(() => {
     loadItems();
   }, []);
+
+  /* Close actions dropdown on outside click */
+  useEffect(() => {
+    if (!openActionId) return;
+    const handler = () => setOpenActionId(null);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [openActionId]);
 
   function openEdit(item: ApiEquipment) {
     setEditing(item);
@@ -173,6 +198,7 @@ export default function AdminEquipmentPage() {
     setFormPopular(item.isPopular);
     setFormImages(item.images.map(({ url, alt }) => ({ url, alt })));
     setFormSpecs(item.specs.map(({ label, value }) => ({ label, value })));
+    setOpenActionId(null);
   }
 
   function openNew() {
@@ -229,8 +255,7 @@ export default function AdminEquipmentPage() {
     }
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(`Видалити "${name}"?`)) return;
+  async function handleDelete(id: string) {
     try {
       await apiFetch(`/admin/equipment/${id}`, { method: "DELETE" });
       await loadItems();
@@ -238,361 +263,346 @@ export default function AdminEquipmentPage() {
     } catch (err) {
       alert(err instanceof Error ? err.message : "Помилка видалення");
     }
+    setDeleteTarget(null);
   }
+
+  /* ── Filtered list ── */
+  const filtered = items.filter((item) => {
+    if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterType && item.type !== filterType) return false;
+    return true;
+  });
 
   /* ── Render ── */
 
   return (
     <>
       {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-dark sm:text-[32px]">Список техніки</h1>
-        <button
-          onClick={openNew}
-          className="w-full rounded-full bg-primary px-3.5 py-2.5 text-[13px] font-bold text-dark transition-opacity hover:opacity-90 sm:w-auto"
-        >
-          + Додати нову техніку
-        </button>
-      </div>
+      <AdminPageHeader title="Техніка" subtitle={`${items.length} одиниць`}>
+        <AdminButton onClick={openNew}>+ Додати техніку</AdminButton>
+      </AdminPageHeader>
 
-      {/* Equipment List */}
-      <div className="flex flex-col gap-2.5 rounded-[14px] border border-border bg-white p-3.5">
-        <h2 className="text-[22px] font-bold text-dark">Список техніки</h2>
+      {/* Filters */}
+      <AdminFilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Пошук за назвою…"
+      >
+        <div className="w-full sm:w-44">
+          <AdminSelect value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+            <option value="">Всі типи</option>
+            {Object.entries(typeLabels).map(([val, label]) => (
+              <option key={val} value={val}>{label}</option>
+            ))}
+          </AdminSelect>
+        </div>
+      </AdminFilterBar>
 
-        {/* Header row */}
-        <div className="hidden items-center gap-2 rounded-lg bg-light-bg px-2.5 py-2 sm:flex">
-          <span className="flex-1 text-xs font-bold text-dark-text">Назва</span>
-          <span className="w-24 text-xs font-bold text-dark-text">Ціна/год</span>
-          <span className="w-24 text-xs font-bold text-dark-text">Статус</span>
-          <span className="w-44 text-xs font-bold text-dark-text">Дії</span>
+      {/* Equipment table */}
+      <AdminCard className="overflow-hidden p-0">
+        {/* Table header */}
+        <div className="hidden items-center gap-2 border-b border-gray-100 bg-gray-50 px-4 py-2.5 sm:flex">
+          <span className="flex-1 text-xs font-semibold text-gray-500">Назва</span>
+          <span className="w-24 text-xs font-semibold text-gray-500">Тип</span>
+          <span className="w-20 text-xs font-semibold text-gray-500">Ціна/год</span>
+          <span className="w-20 text-xs font-semibold text-gray-500">Статус</span>
+          <span className="w-16 text-xs font-semibold text-gray-500 text-right">Дії</span>
         </div>
 
         {/* Rows */}
         {loading ? (
-          <p className="py-8 text-center text-sm text-dark-text">
-            Завантаження...
-          </p>
-        ) : items.length === 0 ? (
-          <p className="py-8 text-center text-sm text-dark-text">
-            Техніка відсутня
+          <p className="py-10 text-center text-sm text-gray-400">Завантаження…</p>
+        ) : filtered.length === 0 ? (
+          <p className="py-10 text-center text-sm text-gray-400">
+            {items.length === 0 ? "Техніка відсутня" : "Нічого не знайдено"}
           </p>
         ) : (
-          items.map((item) => {
+          filtered.map((item) => {
             const hasBooked = item.bookedPeriods.length > 0;
             return (
               <div
                 key={item.id}
-                className="flex flex-col gap-2 rounded-lg border border-[#EFEFEF] bg-white px-2.5 py-2.5 sm:flex-row sm:items-center sm:gap-2"
+                className="flex flex-col gap-2 border-b border-gray-100 px-4 py-3 last:border-b-0 sm:flex-row sm:items-center sm:gap-2 hover:bg-gray-50/60 transition-colors"
               >
+                {/* Name */}
                 <div className="flex items-center justify-between sm:flex-1">
-                  <span className="text-[13px] font-semibold text-dark">
-                    {item.name}
-                  </span>
-                  <span className="text-[13px] font-semibold text-dark-text sm:hidden">
-                    {item.pricePerHour} грн/год
-                  </span>
+                  <span className="text-sm font-medium text-gray-900">{item.name}</span>
+                  <span className="text-xs text-gray-500 sm:hidden">{item.pricePerHour} грн</span>
                 </div>
-                <span className="hidden w-24 text-[13px] font-semibold text-dark-text sm:block">
+                {/* Type */}
+                <span className="hidden w-24 text-xs text-gray-500 sm:block">
+                  {typeLabels[item.type] ?? item.type}
+                </span>
+                {/* Price */}
+                <span className="hidden w-20 text-sm font-medium text-gray-700 sm:block">
                   {item.pricePerHour}
                 </span>
+                {/* Status + Actions */}
                 <div className="flex items-center justify-between sm:contents">
-                  <span className="sm:w-24">
-                    {hasBooked ? (
-                      <span className="text-xs font-bold text-[#B42318]">
-                        Зайнято
-                      </span>
-                    ) : (
-                      <span className="text-xs font-bold text-[#1F7A1F]">
-                        Вільно
-                      </span>
-                    )}
+                  <span className="sm:w-20">
+                    <StatusBadge status={hasBooked ? "busy" : "available"} />
                   </span>
-                  <div className="flex gap-1.5 sm:w-44">
+                  {/* Actions dropdown */}
+                  <div className="relative sm:w-16 sm:text-right">
                     <button
-                      onClick={() => openEdit(item)}
-                      className="rounded-full bg-light-bg px-2.5 py-1.5 text-[11px] font-bold text-dark transition-colors hover:bg-gray-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenActionId(openActionId === item.id ? null : item.id);
+                      }}
+                      className="rounded-md px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
                     >
-                      Редагувати
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                      </svg>
                     </button>
-                    <button
-                      onClick={() => handleDelete(item.id, item.name)}
-                      className="rounded-full bg-[#FFE7E7] px-2.5 py-1.5 text-[11px] font-bold text-[#B42318] transition-colors hover:bg-red-200"
-                    >
-                      Видалити
-                    </button>
+                    {openActionId === item.id && (
+                      <div className="absolute right-0 top-full z-20 mt-1 w-36 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                        <button
+                          onClick={() => openEdit(item)}
+                          className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          Редагувати
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeleteTarget({ id: item.id, name: item.name });
+                            setOpenActionId(null);
+                          }}
+                          className="w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50"
+                        >
+                          Видалити
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             );
           })
         )}
-      </div>
+      </AdminCard>
+
+      {/* Confirm delete modal */}
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Видалення техніки"
+        message={`Ви впевнені, що хочете видалити "${deleteTarget?.name}"?`}
+        confirmLabel="Видалити"
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
       {/* Edit / Create panel */}
       {editing && (
-        <form
-          onSubmit={handleSave}
-          className="flex flex-col gap-3 rounded-[14px] border border-border bg-white p-4"
-        >
-          {/* Edit header */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-dark">
-              {editing.id ? `Редагування: ${editing.name}` : "Нова техніка"}
-            </h2>
-            <button
-              type="button"
-              onClick={closeEdit}
-              className="text-sm font-bold text-dark-text hover:text-dark"
-            >
-              ✕
-            </button>
-          </div>
+        <AdminCard className="mt-4">
+          <form onSubmit={handleSave} className="flex flex-col gap-4">
+            {/* Edit header */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">
+                {editing.id ? `Редагування: ${editing.name}` : "Нова техніка"}
+              </h2>
+              <button
+                type="button"
+                onClick={closeEdit}
+                className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-          {/* Form grid */}
-          <div className="flex flex-col gap-3 sm:flex-row">
-            {/* Left fields */}
-            <div className="flex flex-1 flex-col gap-2">
-              <Field label="Назва" value={formName} onChange={setFormName} />
-              <Field label="Slug" value={formSlug} onChange={setFormSlug} />
-              <Field label="Бренд" value={formBrand} onChange={setFormBrand} />
+            {/* Form grid */}
+            <div className="flex flex-col gap-4 sm:flex-row">
+              {/* Left fields */}
+              <div className="flex flex-1 flex-col gap-3">
+                <AdminInput label="Назва" value={formName} onChange={(e) => setFormName(e.target.value)} required />
+                <AdminInput label="Slug" value={formSlug} onChange={(e) => setFormSlug(e.target.value)} required />
+                <AdminInput label="Бренд" value={formBrand} onChange={(e) => setFormBrand(e.target.value)} required />
 
-              <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-dark-text">Тип</span>
-                <select
+                <AdminSelect
+                  label="Тип"
                   value={formType}
                   onChange={(e) => setFormType(e.target.value)}
-                  className="rounded-[10px] bg-light-bg px-3 py-2.5 text-[13px] font-semibold text-dark outline-none"
                 >
                   {Object.entries(typeLabels).map(([val, label]) => (
-                    <option key={val} value={val}>
-                      {label}
-                    </option>
+                    <option key={val} value={val}>{label}</option>
                   ))}
-                </select>
-              </div>
+                </AdminSelect>
 
-              <Field
-                label="Ціна / год"
-                value={formPrice}
-                onChange={setFormPrice}
-                type="number"
-              />
+                <AdminInput
+                  label="Ціна / год"
+                  type="number"
+                  value={formPrice}
+                  onChange={(e) => setFormPrice(e.target.value)}
+                  required
+                />
 
-              <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-dark-text">Опис</span>
-                <textarea
+                <AdminTextarea
+                  label="Опис"
                   value={formDesc}
                   onChange={(e) => setFormDesc(e.target.value)}
                   rows={3}
-                  className="rounded-[10px] bg-light-bg px-3 py-2.5 text-[13px] font-semibold text-dark outline-none"
                 />
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formPopular}
+                    onChange={(e) => setFormPopular(e.target.checked)}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <span className="text-xs font-medium text-gray-600">Популярна техніка</span>
+                </label>
+
+                {/* Image upload */}
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs font-medium text-gray-600">Фото</span>
+
+                  {formImages.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {formImages.map((img, i) => (
+                        <div key={i} className="group relative">
+                          <img
+                            src={
+                              img.url.startsWith("http")
+                                ? img.url
+                                : `${API_BASE.replace(/\/api$/, "")}${img.url}`
+                            }
+                            alt={img.alt}
+                            className="h-20 w-20 rounded-lg object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(i)}
+                            className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handleFiles(e.target.files)}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-full rounded-lg border-2 border-dashed border-gray-300 py-3 text-xs font-semibold text-gray-500 transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+                  >
+                    {uploading ? "Завантаження…" : "+ Завантажити фото"}
+                  </button>
+
+                  <div className="flex gap-2">
+                    <AdminInput
+                      type="url"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addImageByUrl(); } }}
+                      placeholder="https://example.com/photo.jpg"
+                      className="flex-1"
+                    />
+                    <AdminButton type="button" variant="secondary" size="sm" onClick={addImageByUrl}>
+                      + URL
+                    </AdminButton>
+                  </div>
+                </div>
+
+                {/* Specs */}
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs font-medium text-gray-600">Характеристики</span>
+
+                  {formSpecs.map((spec, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        value={spec.label}
+                        onChange={(e) => updateSpec(i, "label", e.target.value)}
+                        placeholder="Назва"
+                        className="w-2/5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+                      />
+                      <input
+                        value={spec.value}
+                        onChange={(e) => updateSpec(i, "value", e.target.value)}
+                        placeholder="Значення"
+                        className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeSpec(i)}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-50 text-xs font-bold text-red-500 transition-colors hover:bg-red-100"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+
+                  <div className="flex items-end gap-2">
+                    <div className="flex w-2/5 flex-col gap-1">
+                      <input
+                        list="spec-labels"
+                        value={newSpecLabel}
+                        onChange={(e) => setNewSpecLabel(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSpec(); } }}
+                        placeholder="Назва характеристики"
+                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+                      />
+                      <datalist id="spec-labels">
+                        {existingLabels.map((l) => (
+                          <option key={l} value={l} />
+                        ))}
+                      </datalist>
+                    </div>
+                    <input
+                      value={newSpecValue}
+                      onChange={(e) => setNewSpecValue(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSpec(); } }}
+                      placeholder="Значення"
+                      className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-primary"
+                    />
+                    <AdminButton type="button" variant="secondary" size="sm" onClick={addSpec}>
+                      + Додати
+                    </AdminButton>
+                  </div>
+                </div>
               </div>
 
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formPopular}
-                  onChange={(e) => setFormPopular(e.target.checked)}
-                  className="h-4 w-4 accent-primary"
-                />
-                <span className="text-xs font-bold text-dark-text">
-                  Популярна техніка
-                </span>
-              </label>
-
-              {/* Image upload */}
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-bold text-dark-text">Фото</span>
-
-                {formImages.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {formImages.map((img, i) => (
-                      <div key={i} className="group relative">
-                        <img
-                          src={
-                            img.url.startsWith("http")
-                              ? img.url
-                              : `${API_BASE.replace(/\/api$/, "")}${img.url}`
-                          }
-                          alt={img.alt}
-                          className="h-20 w-20 rounded-lg object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(i)}
-                          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#B42318] text-[10px] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100"
-                        >
-                          ✕
-                        </button>
-                      </div>
+              {/* Right — booked periods */}
+              {editing.id && editing.bookedPeriods?.length > 0 && (
+                <div className="flex flex-1 flex-col gap-2 rounded-lg bg-gray-50 p-4">
+                  <span className="text-sm font-semibold text-gray-700">Зайнятість</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {editing.bookedPeriods.map((bp) => (
+                      <StatusBadge
+                        key={bp.id}
+                        status="busy"
+                        label={`${bp.from.split("T")[0]} — ${bp.to.split("T")[0]}`}
+                      />
                     ))}
                   </div>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => handleFiles(e.target.files)}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="w-full rounded-[10px] border-2 border-dashed border-gray-300 py-3 text-xs font-bold text-dark-text transition-colors hover:border-primary hover:text-dark disabled:opacity-50"
-                >
-                  {uploading ? "Завантаження..." : "+ Завантажити фото"}
-                </button>
-
-                <div className="flex gap-1.5">
-                  <input
-                    type="url"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addImageByUrl(); } }}
-                    placeholder="https://example.com/photo.jpg"
-                    className="flex-1 rounded-[10px] bg-light-bg px-3 py-2.5 text-[13px] font-semibold text-dark outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={addImageByUrl}
-                    className="rounded-[10px] bg-light-bg px-3 py-2.5 text-xs font-bold text-dark-text transition-colors hover:bg-gray-200"
-                  >
-                    + URL
-                  </button>
                 </div>
-              </div>
-
-              {/* Specs */}
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-bold text-dark-text">Характеристики</span>
-
-                {formSpecs.map((spec, i) => (
-                  <div key={i} className="flex items-center gap-1.5">
-                    <input
-                      value={spec.label}
-                      onChange={(e) => updateSpec(i, "label", e.target.value)}
-                      placeholder="Назва"
-                      className="w-2/5 rounded-[10px] bg-light-bg px-3 py-2 text-[13px] font-semibold text-dark outline-none"
-                    />
-                    <input
-                      value={spec.value}
-                      onChange={(e) => updateSpec(i, "value", e.target.value)}
-                      placeholder="Значення"
-                      className="flex-1 rounded-[10px] bg-light-bg px-3 py-2 text-[13px] font-semibold text-dark outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeSpec(i)}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FFE7E7] text-[11px] font-bold text-[#B42318] transition-colors hover:bg-red-200"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-
-                <div className="flex items-end gap-1.5">
-                  <div className="flex w-2/5 flex-col gap-1">
-                    <input
-                      list="spec-labels"
-                      value={newSpecLabel}
-                      onChange={(e) => setNewSpecLabel(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSpec(); } }}
-                      placeholder="Назва характеристики"
-                      className="w-full rounded-[10px] bg-light-bg px-3 py-2 text-[13px] font-semibold text-dark outline-none"
-                    />
-                    <datalist id="spec-labels">
-                      {existingLabels.map((l) => (
-                        <option key={l} value={l} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <input
-                    value={newSpecValue}
-                    onChange={(e) => setNewSpecValue(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSpec(); } }}
-                    placeholder="Значення"
-                    className="flex-1 rounded-[10px] bg-light-bg px-3 py-2 text-[13px] font-semibold text-dark outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={addSpec}
-                    className="shrink-0 rounded-[10px] bg-light-bg px-3 py-2 text-xs font-bold text-dark-text transition-colors hover:bg-gray-200"
-                  >
-                    + Додати
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* Right — booked periods */}
-            {editing.id && editing.bookedPeriods?.length > 0 && (
-              <div className="flex flex-1 flex-col gap-2 rounded-[10px] bg-light-bg p-3">
-                <span className="text-sm font-bold text-dark">
-                  Керування зайнятістю
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {editing.bookedPeriods.map((bp) => (
-                    <span
-                      key={bp.id}
-                      className="rounded-full bg-[#FFE7E7] px-2.5 py-2 text-[11px] font-bold text-[#B42318]"
-                    >
-                      {bp.from.split("T")[0]} — {bp.to.split("T")[0]}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-2.5">
-            <button
-              type="button"
-              onClick={closeEdit}
-              className="flex-1 rounded-full bg-light-bg py-2.5 text-center text-xs font-bold text-dark transition-colors hover:bg-gray-200"
-            >
-              Скасувати
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 rounded-full bg-primary py-2.5 text-center text-xs font-bold text-dark transition-opacity hover:opacity-90 disabled:opacity-60"
-            >
-              {saving ? "Збереження..." : "Зберегти"}
-            </button>
-          </div>
-        </form>
+            {/* Actions */}
+            <div className="flex gap-3">
+              <AdminButton type="button" variant="secondary" onClick={closeEdit} className="flex-1">
+                Скасувати
+              </AdminButton>
+              <AdminButton type="submit" disabled={saving} className="flex-1">
+                {saving ? "Збереження…" : "Зберегти"}
+              </AdminButton>
+            </div>
+          </form>
+        </AdminCard>
       )}
     </>
-  );
-}
-
-/* ── Reusable field ── */
-
-function Field({
-  label,
-  value,
-  onChange,
-  type = "text",
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  type?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-bold text-dark-text">{label}</span>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-[10px] bg-light-bg px-3 py-2.5 text-[13px] font-semibold text-dark outline-none"
-        required
-      />
-    </div>
   );
 }

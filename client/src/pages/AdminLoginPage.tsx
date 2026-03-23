@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
       });
 
       login(data.token, data.admin);
-      navigate("/admin/dashboard");
+      navigate("/admin/overview");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Помилка авторизації");
     } finally {

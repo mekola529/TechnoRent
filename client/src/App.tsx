@@ -10,6 +10,7 @@ import AdminLayout from "./components/AdminLayout";
 import AdminEquipmentPage from "./pages/AdminEquipmentPage";
 import AdminOrdersPage from "./pages/AdminOrdersPage";
 import AdminOccupancyPage from "./pages/AdminOccupancyPage";
+import AdminOverviewPage from "./pages/AdminOverviewPage";
 import ServicesPage from "./pages/ServicesPage";
 import ContactsPage from "./pages/ContactsPage";
 import RequireAuth from "./components/RequireAuth";
@@ -43,7 +44,8 @@ function App() {
               </RequireAuth>
             }
           >
-            <Route path="dashboard" element={<AdminEquipmentPage />} />
+            <Route path="overview" element={<AdminOverviewPage />} />
+            <Route path="equipment" element={<AdminEquipmentPage />} />
             <Route path="orders" element={<AdminOrdersPage />} />
             <Route path="occupancy" element={<AdminOccupancyPage />} />
           </Route>

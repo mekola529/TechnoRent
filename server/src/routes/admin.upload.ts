@@ -1,3 +1,4 @@
+import { logError } from "../lib/logger.js";
 import { Router } from "express";
 import multer from "multer";
 import sharp from "sharp";
@@ -50,7 +51,7 @@ adminUploadRouter.post("/", upload.single("image"), async (req, res) => {
     const url = `/uploads/${filename}`;
     res.json({ url, alt: req.file.originalname });
   } catch (e) {
-    console.error("POST /api/admin/upload error:", e);
+    logError("POST /api/admin/upload error:", e);
     res.status(500).json({ error: "Помилка завантаження" });
   }
 });
@@ -75,7 +76,7 @@ adminUploadRouter.delete("/", async (req, res) => {
     }
     res.json({ success: true });
   } catch (e) {
-    console.error("DELETE /api/admin/upload error:", e);
+    logError("DELETE /api/admin/upload error:", e);
     res.status(500).json({ error: "Помилка видалення файлу" });
   }
 });

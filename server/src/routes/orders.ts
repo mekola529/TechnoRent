@@ -1,3 +1,4 @@
+import { logError } from "../lib/logger.js";
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { sendTelegramNotification } from "../lib/telegram.js";
@@ -53,7 +54,7 @@ ordersRouter.post("/", validate(createOrderSchema), async (req, res) => {
     // Відправити сповіщення в Telegram (не блокує відповідь)
     sendTelegramNotification(order);
   } catch (e) {
-    console.error("POST /api/orders error:", e);
+    logError("POST /api/orders error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });

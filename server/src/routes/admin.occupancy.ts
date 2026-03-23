@@ -1,3 +1,4 @@
+import { logError } from "../lib/logger.js";
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -34,7 +35,7 @@ adminOccupancyRouter.get("/", async (_req, res) => {
     });
     res.json(periods);
   } catch (e) {
-    console.error("GET /api/admin/occupancy error:", e);
+    logError("GET /api/admin/occupancy error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });
@@ -62,7 +63,7 @@ adminOccupancyRouter.post("/", validate(periodSchema), async (req, res) => {
 
     res.status(201).json(period);
   } catch (e) {
-    console.error("POST /api/admin/occupancy error:", e);
+    logError("POST /api/admin/occupancy error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });
@@ -91,7 +92,7 @@ adminOccupancyRouter.put("/:id", validate(periodSchema.partial()), async (req, r
 
     res.json(period);
   } catch (e) {
-    console.error("PUT /api/admin/occupancy/:id error:", e);
+    logError("PUT /api/admin/occupancy/:id error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });
@@ -102,7 +103,7 @@ adminOccupancyRouter.delete("/:id", async (req, res) => {
     await prisma.bookedPeriod.delete({ where: { id: req.params.id as string } });
     res.json({ success: true });
   } catch (e) {
-    console.error("DELETE /api/admin/occupancy/:id error:", e);
+    logError("DELETE /api/admin/occupancy/:id error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });

@@ -1,3 +1,4 @@
+import { logError } from "../lib/logger.js";
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -41,7 +42,7 @@ adminEquipmentRouter.post("/", validate(equipmentSchema), async (req, res) => {
 
     res.status(201).json(item);
   } catch (e) {
-    console.error("POST /api/admin/equipment error:", e);
+    logError("POST /api/admin/equipment error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });
@@ -97,7 +98,7 @@ adminEquipmentRouter.put("/:id", validate(equipmentSchema.partial()), async (req
 
     res.json(updated);
   } catch (e) {
-    console.error("PUT /api/admin/equipment/:id error:", e);
+    logError("PUT /api/admin/equipment/:id error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });
@@ -114,7 +115,7 @@ adminEquipmentRouter.delete("/:id", async (req, res) => {
     await prisma.equipment.delete({ where: { id } });
     res.json({ success: true });
   } catch (e) {
-    console.error("DELETE /api/admin/equipment/:id error:", e);
+    logError("DELETE /api/admin/equipment/:id error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });

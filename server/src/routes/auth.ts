@@ -1,3 +1,4 @@
+import { logError } from "../lib/logger.js";
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { compare } from "bcryptjs";
@@ -7,7 +8,11 @@ import { validate } from "../middleware/validate.js";
 
 export const authRouter = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+const _jwtSecret = process.env.JWT_SECRET;
+if (!_jwtSecret) {
+  throw new Error("JWT_SECRET environment variable is required");
+}
+const JWT_SECRET: string = _jwtSecret;
 
 const loginSchema = z.object({
   email: z.string().min(1, "Логін обов'язковий"),
@@ -42,7 +47,7 @@ authRouter.post("/login", validate(loginSchema), async (req, res) => {
       admin: { id: admin.id, email: admin.email, role: admin.role },
     });
   } catch (e) {
-    console.error("POST /api/auth/login error:", e);
+    logError("POST /api/auth/login error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });

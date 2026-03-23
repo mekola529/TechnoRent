@@ -1,3 +1,4 @@
+import { logError } from "../lib/logger.js";
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 
@@ -13,7 +14,7 @@ equipmentRouter.get("/meta/brands", async (_req, res) => {
     });
     res.json(brands.map((b: { brand: string }) => b.brand));
   } catch (e) {
-    console.error("GET /api/equipment/meta/brands error:", e);
+    logError("GET /api/equipment/meta/brands error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });
@@ -28,7 +29,7 @@ equipmentRouter.get("/meta/types", async (_req, res) => {
     });
     res.json(types.map((t: { type: string }) => t.type));
   } catch (e) {
-    console.error("GET /api/equipment/meta/types error:", e);
+    logError("GET /api/equipment/meta/types error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });
@@ -61,7 +62,7 @@ equipmentRouter.get("/", async (req, res) => {
 
     res.json(items);
   } catch (e) {
-    console.error("GET /api/equipment error:", e);
+    logError("GET /api/equipment error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });
@@ -85,7 +86,7 @@ equipmentRouter.get("/:slug", async (req, res) => {
 
     res.json(item);
   } catch (e) {
-    console.error("GET /api/equipment/:slug error:", e);
+    logError("GET /api/equipment/:slug error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });

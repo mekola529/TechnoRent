@@ -1,3 +1,4 @@
+import { logError } from "../lib/logger.js";
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -31,7 +32,7 @@ adminOrdersRouter.get("/", async (req, res) => {
 
     res.json(orders);
   } catch (e) {
-    console.error("GET /api/admin/orders error:", e);
+    logError("GET /api/admin/orders error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });
@@ -59,7 +60,7 @@ adminOrdersRouter.patch("/:id/status", validate(statusSchema), async (req, res) 
 
     res.json(order);
   } catch (e) {
-    console.error("PATCH /api/admin/orders/:id/status error:", e);
+    logError("PATCH /api/admin/orders/:id/status error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });
@@ -70,7 +71,7 @@ adminOrdersRouter.delete("/:id", async (req, res) => {
     await prisma.order.delete({ where: { id: req.params.id as string } });
     res.json({ success: true });
   } catch (e) {
-    console.error("DELETE /api/admin/orders/:id error:", e);
+    logError("DELETE /api/admin/orders/:id error:", e);
     res.status(500).json({ error: "Помилка сервера" });
   }
 });

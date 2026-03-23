@@ -63,9 +63,18 @@ app.get("/api/sitemap.xml", async (_req, res) => {
   }
 });
 
+// Rate limiting for orders (anti-spam)
+const ordersLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  message: { error: "Забагато заявок. Спробуйте пізніше." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // ─── Public API ───────────────────────────────────
 app.use("/api/equipment", equipmentRouter);
-app.use("/api/orders", ordersRouter);
+app.use("/api/orders", ordersLimiter, ordersRouter);
 app.use("/api/auth", authLimiter, authRouter);
 
 // ─── Admin API (protected) ────────────────────────

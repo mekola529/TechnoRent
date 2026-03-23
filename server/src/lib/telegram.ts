@@ -1,3 +1,4 @@
+import { logError } from "./logger.js";
 export async function sendTelegramNotification(order: {
   customerName: string;
   phone: string;
@@ -52,7 +53,7 @@ export async function sendTelegramNotification(order: {
       }),
     });
   } catch (e) {
-    console.error("Telegram notification error:", e);
+    logError("Telegram notification error:", e);
   }
 }
 

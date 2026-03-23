@@ -52,10 +52,10 @@ export default function AdminLoginPage() {
         <div className="flex flex-col gap-1.5">
           <span className="text-lg font-bold text-dark">TechnoRent</span>
           <h1 className="text-[30px] font-bold leading-tight text-dark">
-            Admin Login
+            Вхід в панель
           </h1>
           <p className="text-sm font-medium text-dark-text">
-            Sign in to access the administration panel.
+            Увійдіть, щоб отримати доступ до адміністрування.
           </p>
         </div>
 
@@ -63,7 +63,7 @@ export default function AdminLoginPage() {
         <div className="flex flex-col gap-3.5">
           {/* Login */}
           <div className="flex flex-col gap-2">
-            <label className="text-[13px] font-semibold text-dark">Login</label>
+            <label className="text-[13px] font-semibold text-dark">Логін</label>
             <input
               type="text"
               placeholder="admin@technorent.com"
@@ -77,7 +77,7 @@ export default function AdminLoginPage() {
           {/* Password */}
           <div className="flex flex-col gap-2">
             <label className="text-[13px] font-semibold text-dark">
-              Password
+              Пароль
             </label>
             <input
               type="password"
@@ -102,13 +102,13 @@ export default function AdminLoginPage() {
             disabled={loading}
             className="flex h-12 items-center justify-center rounded-[10px] bg-primary text-[15px] font-bold text-dark transition-opacity hover:opacity-90 disabled:opacity-60"
           >
-            {loading ? "Зачекайте..." : "Sign In"}
+            {loading ? "Зачекайте..." : "Увійти"}
           </button>
         </div>
 
         {/* Helper */}
         <p className="text-xs font-medium text-[#6E6E6E]">
-          Only authorized personnel can access this area.
+          Доступ лише для авторизованого персоналу.
         </p>
       </form>
     </div>

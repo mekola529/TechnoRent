@@ -39,19 +39,28 @@ export default function EquipmentDetailPage() {
   }, [slug]);
 
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  const [calYear, setCalYear] = useState(now.getFullYear());
+  const [calMonth, setCalMonth] = useState(now.getMonth());
+
+  function prevMonth() {
+    if (calMonth === 0) { setCalMonth(11); setCalYear((y) => y - 1); }
+    else setCalMonth((m) => m - 1);
+  }
+  function nextMonth() {
+    if (calMonth === 11) { setCalMonth(0); setCalYear((y) => y + 1); }
+    else setCalMonth((m) => m + 1);
+  }
 
   const calendarData = useMemo(() => {
     if (!item) return null;
-    const { daysInMonth, startOffset } = getMonthDays(year, month);
+    const { daysInMonth, startOffset } = getMonthDays(calYear, calMonth);
     const days: { day: number; available: boolean }[] = [];
     for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       days.push({ day: d, available: isAvailableOnDate(item, dateStr) });
     }
-    return { days, startOffset, monthName: `${monthNames[month]} ${year}` };
-  }, [item, year, month]);
+    return { days, startOffset, monthName: `${monthNames[calMonth]} ${calYear}` };
+  }, [item, calYear, calMonth]);
 
   if (loading) {
     return (
@@ -186,7 +195,11 @@ export default function EquipmentDetailPage() {
         <div className="flex w-full flex-col gap-3 rounded-2xl border border-border bg-white p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-[22px] font-bold text-dark">Календар зайнятості</h2>
-            <span className="text-[13px] font-semibold text-dark-text">{calendarData?.monthName}</span>
+            <div className="flex items-center gap-2">
+              <button onClick={prevMonth} className="text-sm font-semibold text-dark-text hover:text-dark">←</button>
+              <span className="text-[13px] font-semibold text-dark-text">{calendarData?.monthName}</span>
+              <button onClick={nextMonth} className="text-sm font-semibold text-dark-text hover:text-dark">→</button>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
             <span className="rounded-full bg-[#FFF6D8] px-2.5 py-1.5 text-xs font-semibold text-dark">Зайнято</span>

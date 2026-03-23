@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="76" fill="#fff"/>
+  <!-- R (yellow, behind) -->
+  <path fill="#F2B705" fill-rule="evenodd" d="M200 72h170c75 0 118 50 118 108s-43 108-118 108h-50l145 152H370L218 296v144h-68V72h50zm50 58v108h110c42 0 68-25 68-54s-26-54-68-54H250z"/>
+  <!-- T (dark, in front) -->
+  <path fill="#111" d="M24 72h270v64H198v304h-72V136H24V72z"/>
+</svg>

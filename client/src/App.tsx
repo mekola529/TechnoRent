@@ -10,8 +10,11 @@ import AdminLayout from "./components/AdminLayout";
 import AdminEquipmentPage from "./pages/AdminEquipmentPage";
 import AdminOrdersPage from "./pages/AdminOrdersPage";
 import AdminOccupancyPage from "./pages/AdminOccupancyPage";
+import AdminRentOrdersPage from "./pages/AdminRentOrdersPage";
+import AdminServiceRequestsPage from "./pages/AdminServiceRequestsPage";
 import AdminOverviewPage from "./pages/AdminOverviewPage";
 import ServicesPage from "./pages/ServicesPage";
+import DebrisRemovalPage from "./pages/DebrisRemovalPage";
 import ContactsPage from "./pages/ContactsPage";
 import RequireAuth from "./components/RequireAuth";
 
@@ -32,6 +35,7 @@ function App() {
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/catalog/:slug" element={<EquipmentDetailPage />} />
           <Route path="/services" element={<ServicesPage />} />
+          <Route path="/services/debris-removal" element={<DebrisRemovalPage />} />
           <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/admin" element={<AdminLoginPage />} />
 
@@ -47,6 +51,8 @@ function App() {
             <Route path="overview" element={<AdminOverviewPage />} />
             <Route path="equipment" element={<AdminEquipmentPage />} />
             <Route path="orders" element={<AdminOrdersPage />} />
+            <Route path="rent-orders" element={<AdminRentOrdersPage />} />
+            <Route path="service-requests" element={<AdminServiceRequestsPage />} />
             <Route path="occupancy" element={<AdminOccupancyPage />} />
           </Route>
         </Routes>

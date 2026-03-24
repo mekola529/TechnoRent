@@ -26,6 +26,7 @@ adminOrdersRouter.get("/", async (req, res) => {
           include: { equipment: { select: { name: true } } },
           orderBy: { from: "asc" },
         },
+        rentOrders: { select: { id: true }, take: 1 },
       },
       orderBy: { createdAt: "desc" },
     });

@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileTabBar from "../components/MobileTabBar";
@@ -70,6 +71,30 @@ export default function ServicesPage() {
           <p className="mt-3 text-base font-medium text-gray-300 max-md:text-sm">
             Повний спектр послуг оренди будівельної техніки для вашого проєкту у Львові та Львівській області
           </p>
+        </div>
+      </section>
+
+      {/* Debris removal — full-width banner */}
+      <section className="w-full bg-dark px-[120px] max-xl:px-8 max-md:px-0">
+        <div className="flex items-center gap-8 px-8 py-10 max-lg:flex-col max-lg:gap-5 max-lg:text-center max-md:px-4 max-md:py-8">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-5xl max-md:h-16 max-md:w-16 max-md:text-4xl">
+            ♻️
+          </div>
+          <div className="flex flex-1 flex-col gap-2">
+            <h2 className="text-[26px] font-bold text-white max-md:text-xl">
+              Вивіз будівельного <span className="text-primary">сміття</span>
+            </h2>
+            <p className="text-[15px] leading-relaxed font-medium text-gray-300 max-md:text-sm">
+              Оперативно вивеземо будівельні відходи, бетон, цеглу, ґрунт та інше сміття з вашого
+              об'єкта у Львові та області. Працюємо швидко і за графіком.
+            </p>
+          </div>
+          <Link
+            to="/services/debris-removal"
+            className="shrink-0 rounded-full bg-primary px-7 py-3.5 text-[14px] font-bold text-dark transition-opacity hover:opacity-90 max-lg:w-full max-lg:text-center"
+          >
+            Детальніше
+          </Link>
         </div>
       </section>
 

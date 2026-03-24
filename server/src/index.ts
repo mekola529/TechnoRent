@@ -19,6 +19,9 @@ import { adminEquipmentRouter } from "./routes/admin.equipment.js";
 import { adminOrdersRouter } from "./routes/admin.orders.js";
 import { adminOccupancyRouter } from "./routes/admin.occupancy.js";
 import { adminUploadRouter } from "./routes/admin.upload.js";
+import { adminRentOrdersRouter } from "./routes/admin.rent-orders.js";
+import { serviceRequestsRouter } from "./routes/service-requests.js";
+import { adminServiceRequestsRouter } from "./routes/admin.service-requests.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -49,6 +52,9 @@ app.get("/api/sitemap.xml", async (_req, res) => {
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
     xml += `  <url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>\n`;
     xml += `  <url><loc>${base}/catalog</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>\n`;
+    xml += `  <url><loc>${base}/services</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>\n`;
+    xml += `  <url><loc>${base}/services/debris-removal</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>\n`;
+    xml += `  <url><loc>${base}/contacts</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>\n`;
 
     for (const eq of equipment) {
       const lastmod = eq.updatedAt.toISOString().split("T")[0];
@@ -75,13 +81,16 @@ const ordersLimiter = rateLimit({
 // ─── Public API ───────────────────────────────────
 app.use("/api/equipment", equipmentRouter);
 app.use("/api/orders", ordersLimiter, ordersRouter);
+app.use("/api/service-requests", ordersLimiter, serviceRequestsRouter);
 app.use("/api/auth", authLimiter, authRouter);
 
 // ─── Admin API (protected) ────────────────────────
 app.use("/api/admin/equipment", adminEquipmentRouter);
 app.use("/api/admin/orders", adminOrdersRouter);
+app.use("/api/admin/rent-orders", adminRentOrdersRouter);
 app.use("/api/admin/occupancy", adminOccupancyRouter);
 app.use("/api/admin/upload", adminUploadRouter);
+app.use("/api/admin/service-requests", adminServiceRequestsRouter);
 
 // ─── Serve frontend in production ─────────────────
 if (process.env.NODE_ENV === "production") {

@@ -15,6 +15,7 @@ import type { Status } from "../components/admin";
 /* ── Types ───────────────────────────────────────── */
 interface EquipmentRef { id: string; name: string; slug: string }
 interface OrderRef { id: string; customerName: string; status: string }
+interface RentOrderRef { id: string; customerName: string; customerPhone: string; status: string }
 
 interface BookedPeriod {
   id: string;
@@ -25,6 +26,8 @@ interface BookedPeriod {
   equipment: EquipmentRef;
   orderId: string | null;
   order: OrderRef | null;
+  rentOrderId: string | null;
+  rentOrder: RentOrderRef | null;
 }
 
 interface EquipmentOption { id: string; name: string }
@@ -220,7 +223,7 @@ export default function AdminOccupancyPage() {
       note: cleanNote,
       noteType: detectedType,
       orderId: p.orderId ?? "",
-      customerName: p.order?.customerName ?? "",
+      customerName: p.order?.customerName ?? p.rentOrder?.customerName ?? "",
     });
     setShowModal(true);
   }
@@ -378,9 +381,9 @@ export default function AdminOccupancyPage() {
                               <span className="text-[11px] font-semibold text-gray-900">
                                 {dp.period.equipment.name}
                               </span>
-                              {dp.period.order && (
+                              {(dp.period.order || dp.period.rentOrder) && (
                                 <span className="text-[10px] text-gray-500">
-                                  {dp.period.order.customerName}
+                                  {dp.period.order?.customerName ?? dp.period.rentOrder?.customerName}
                                 </span>
                               )}
                             </div>
@@ -455,7 +458,7 @@ export default function AdminOccupancyPage() {
                   </div>
                   <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-xs text-gray-500">
-                      {p.order ? p.order.customerName : ""}
+                      {p.order?.customerName ?? p.rentOrder?.customerName ?? ""}
                     </span>
                     <div className="flex items-center gap-1.5">
                       <AdminButton

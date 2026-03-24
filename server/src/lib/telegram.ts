@@ -57,6 +57,60 @@ export async function sendTelegramNotification(order: {
   }
 }
 
+const serviceTypeLabels: Record<string, string> = {
+  debris_removal: "Вивіз будівельного сміття",
+};
+
+export async function sendServiceRequestTelegram(req: {
+  serviceType: string;
+  customerName: string;
+  phone: string;
+  address: string;
+  date: Date;
+  time: string;
+  comment?: string | null;
+}) {
+  const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+  const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+  if (!BOT_TOKEN || !CHAT_ID) return;
+
+  const now = new Date();
+  const timestamp = now.toLocaleString("uk", { timeZone: "Europe/Kyiv" });
+  const serviceLabel = serviceTypeLabels[req.serviceType] ?? req.serviceType;
+
+  const lines = [
+    `🚛 <b>Нова заявка: ${esc(serviceLabel)}</b>`,
+    "",
+    `👤 <b>Ім'я:</b> ${esc(req.customerName)}`,
+    `📞 <b>Телефон:</b> ${esc(req.phone)}`,
+    `📍 <b>Адреса:</b> ${esc(req.address)}`,
+    `📅 <b>Дата:</b> ${req.date.toLocaleDateString("uk")}`,
+    `🕐 <b>Час:</b> ${esc(req.time)}`,
+    "",
+    `💬 <b>Коментар:</b>`,
+    req.comment ? esc(req.comment) : "без коментарю",
+    "",
+    `⏰ ${timestamp}`,
+  ];
+
+  const text = lines.join("\n");
+
+  try {
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text,
+        parse_mode: "HTML",
+      }),
+    });
+  } catch (e) {
+    logError("Telegram service request notification error:", e);
+  }
+}
+
 function esc(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

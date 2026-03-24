@@ -29,7 +29,7 @@ export default function Hero() {
           Швидка оренда екскаваторів, навантажувачів та іншої техніки для
           будівництва. Працюємо по Львову та області.
         </p>
-        <div className="mt-1.5 flex gap-3">
+        <div className="mt-1.5 flex flex-wrap gap-3">
           <Link
             to="/catalog"
             className="rounded-full bg-primary px-[22px] py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
@@ -42,6 +42,12 @@ export default function Hero() {
           >
             Залишити заявку
           </button>
+          <Link
+            to="/services/debris-removal"
+            className="rounded-full border border-primary px-[22px] py-3 text-sm font-bold text-primary transition-colors hover:bg-primary/10"
+          >
+            ♻️ Вивіз сміття
+          </Link>
         </div>
       </div>
     </section>

@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Hero from "../components/Hero";
 import PopularEquipment from "../components/PopularEquipment";
@@ -58,6 +59,41 @@ export default function HomePage() {
         <HowItWorks />
         <PopularEquipment />
         <WhyChooseUs />
+
+        {/* Debris removal promo */}
+        <section className="w-full px-[120px] py-14 max-xl:px-8 max-md:px-4 max-md:py-8">
+          <div className="relative overflow-hidden rounded-[18px] bg-dark px-8 py-10 max-md:px-5 max-md:py-8">
+            {/* Accent line */}
+            <div className="absolute top-0 left-0 h-full w-1.5 bg-primary" />
+
+            <div className="flex items-center gap-8 max-lg:flex-col max-lg:gap-5">
+              {/* Icon */}
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-5xl max-md:h-16 max-md:w-16 max-md:text-4xl">
+                ♻️
+              </div>
+
+              {/* Text */}
+              <div className="flex flex-1 flex-col gap-2 max-lg:text-center">
+                <h2 className="text-[26px] font-bold text-white max-md:text-xl">
+                  Вивіз будівельного <span className="text-primary">сміття</span>
+                </h2>
+                <p className="text-[15px] leading-relaxed font-medium text-gray-300 max-md:text-sm">
+                  Оперативно вивеземо будівельні відходи, бетон, цеглу, ґрунт та інше сміття з вашого
+                  об'єкта у Львові та області. Працюємо швидко і за графіком.
+                </p>
+              </div>
+
+              {/* CTA */}
+              <Link
+                to="/services/debris-removal"
+                className="shrink-0 rounded-full bg-primary px-7 py-3.5 text-[14px] font-bold text-dark transition-opacity hover:opacity-90 max-lg:w-full max-lg:text-center"
+              >
+                Детальніше
+              </Link>
+            </div>
+          </div>
+        </section>
+
         <CallToAction />
       </main>
       <Footer />

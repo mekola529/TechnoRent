@@ -4,6 +4,7 @@ type Status =
   | "confirmed"
   | "completed"
   | "cancelled"
+  | "active"
   | "available"
   | "busy"
   | "maintenance"
@@ -17,6 +18,7 @@ const config: Record<Status, { label: string; bg: string; text: string }> = {
   confirmed:   { label: "Підтверджено",    bg: "bg-emerald-50", text: "text-emerald-700" },
   completed:   { label: "Завершено",       bg: "bg-slate-100",  text: "text-slate-600" },
   cancelled:   { label: "Скасовано",       bg: "bg-red-50",     text: "text-red-600" },
+  active:      { label: "Активне",         bg: "bg-green-50",   text: "text-green-700" },
   available:   { label: "Вільно",          bg: "bg-emerald-50", text: "text-emerald-700" },
   busy:        { label: "Зайнято",         bg: "bg-amber-50",   text: "text-amber-700" },
   maintenance: { label: "Обслуговування",  bg: "bg-violet-50",  text: "text-violet-700" },

@@ -15,6 +15,14 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
+
+    if (res.status === 401) {
+      localStorage.removeItem("admin_token");
+      localStorage.removeItem("admin_user");
+      window.location.href = "/admin";
+      throw new Error("Сесія закінчилась. Увійдіть знову.");
+    }
+
     throw new Error(body.error || `HTTP ${res.status}`);
   }
 

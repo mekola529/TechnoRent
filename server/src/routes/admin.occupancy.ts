@@ -30,6 +30,14 @@ adminOccupancyRouter.get("/", async (_req, res) => {
             status: true,
           },
         },
+        rentOrder: {
+          select: {
+            id: true,
+            customerName: true,
+            customerPhone: true,
+            status: true,
+          },
+        },
       },
       orderBy: { from: "asc" },
     });
@@ -57,6 +65,9 @@ adminOccupancyRouter.post("/", validate(periodSchema), async (req, res) => {
         equipment: { select: { id: true, name: true, slug: true } },
         order: {
           select: { id: true, customerName: true, status: true },
+        },
+        rentOrder: {
+          select: { id: true, customerName: true, customerPhone: true, status: true },
         },
       },
     });
@@ -86,6 +97,9 @@ adminOccupancyRouter.put("/:id", validate(periodSchema.partial()), async (req, r
         equipment: { select: { id: true, name: true, slug: true } },
         order: {
           select: { id: true, customerName: true, status: true },
+        },
+        rentOrder: {
+          select: { id: true, customerName: true, customerPhone: true, status: true },
         },
       },
     });

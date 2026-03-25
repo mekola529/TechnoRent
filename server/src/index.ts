@@ -54,7 +54,7 @@ app.get("/api/sitemap.xml", async (_req, res) => {
     xml += `  <url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>\n`;
     xml += `  <url><loc>${base}/catalog</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>\n`;
     xml += `  <url><loc>${base}/services</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>\n`;
-    xml += `  <url><loc>${base}/services/debris-removal</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>\n`;
+    xml += `  <url><loc>${base}/vyviz-smittia</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>\n`;
     xml += `  <url><loc>${base}/contacts</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>\n`;
 
     for (const eq of equipment) {

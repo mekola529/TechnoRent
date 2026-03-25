@@ -125,7 +125,7 @@ export default function DebrisRemovalPage() {
           name="description"
           content="Замовте вивіз будівельного сміття у Львові та Львівській області. Швидке погодження, зручний вибір дати та часу, виїзд на адресу."
         />
-        <link rel="canonical" href="https://technorent.ua/services/debris-removal" />
+        <link rel="canonical" href="https://technorent.ua/vyviz-smittia" />
       </Helmet>
 
       <Header />

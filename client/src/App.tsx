@@ -35,7 +35,7 @@ function App() {
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/catalog/:slug" element={<EquipmentDetailPage />} />
           <Route path="/services" element={<ServicesPage />} />
-          <Route path="/services/debris-removal" element={<DebrisRemovalPage />} />
+          <Route path="/vyviz-smittia" element={<DebrisRemovalPage />} />
           <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/admin" element={<AdminLoginPage />} />
 

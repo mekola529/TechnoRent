@@ -43,7 +43,7 @@ export default function Hero() {
             Залишити заявку
           </button>
           <Link
-            to="/services/debris-removal"
+            to="/vyviz-smittia"
             className="rounded-full border border-primary px-[22px] py-3 text-sm font-bold text-primary transition-colors hover:bg-primary/10"
           >
             ♻️ Вивіз сміття

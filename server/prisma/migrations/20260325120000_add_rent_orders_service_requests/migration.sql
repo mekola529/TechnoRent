@@ -44,8 +44,7 @@ CREATE TABLE "RentOrderItem" (
     CONSTRAINT "RentOrderItem_pkey" PRIMARY KEY ("id")
 );
 
--- AlterTable: add orderId and rentOrderId to BookedPeriod
-ALTER TABLE "BookedPeriod" ADD COLUMN "orderId" TEXT;
+-- AlterTable: add rentOrderId to BookedPeriod (orderId already exists from init)
 ALTER TABLE "BookedPeriod" ADD COLUMN "rentOrderId" TEXT;
 
 -- CreateIndex
@@ -61,7 +60,6 @@ CREATE INDEX "RentOrderItem_equipmentId_idx" ON "RentOrderItem"("equipmentId");
 CREATE INDEX "BookedPeriod_rentOrderId_idx" ON "BookedPeriod"("rentOrderId");
 
 -- AddForeignKey
-ALTER TABLE "BookedPeriod" ADD CONSTRAINT "BookedPeriod_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "BookedPeriod" ADD CONSTRAINT "BookedPeriod_rentOrderId_fkey" FOREIGN KEY ("rentOrderId") REFERENCES "RentOrder"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 ALTER TABLE "RentOrder" ADD CONSTRAINT "RentOrder_sourceRequestId_fkey" FOREIGN KEY ("sourceRequestId") REFERENCES "Order"("id") ON DELETE SET NULL ON UPDATE CASCADE;

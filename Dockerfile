@@ -33,4 +33,4 @@ WORKDIR /app/server
 # Run migrations & start
 ENV NODE_ENV=production
 EXPOSE 3001
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate resolve --rolled-back 20260325000000_add_service_requests_rent_orders 2>/dev/null; npx prisma migrate deploy && npx prisma db seed && node dist/index.js"]

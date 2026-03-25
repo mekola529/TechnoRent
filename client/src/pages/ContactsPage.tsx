@@ -64,7 +64,7 @@ export default function ContactsPage() {
       <section className="w-full bg-dark px-[120px] py-16 max-xl:px-8 max-md:px-4 max-md:py-10">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="text-[42px] font-bold leading-tight text-white max-lg:text-3xl max-md:text-2xl">
-            <span className="text-primary">Контакти</span>
+            <span className="text-primary">Контакти</span> TechnoRent
           </h1>
           <p className="mt-3 text-base font-medium text-gray-300 max-md:text-sm">
             Зв'яжіться з нами для замовлення техніки або консультації

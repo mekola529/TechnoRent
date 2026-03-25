@@ -33,6 +33,35 @@ const localBusinessJsonLd = {
   priceRange: "$$",
 };
 
+const homeFaqItems = [
+  {
+    q: "Яку техніку можна орендувати?",
+    a: "Екскаватори, навантажувачі, бульдозери, автокрани та іншу будівельну спецтехніку для робіт будь-якого масштабу.",
+  },
+  {
+    q: "Як оформити оренду техніки?",
+    a: "Оберіть техніку в каталозі, залиште заявку або зателефонуйте нам. Менеджер уточнить деталі та організує подачу техніки.",
+  },
+  {
+    q: "Чи надаєте оператора разом з технікою?",
+    a: "Так, уся техніка надається з досвідченим оператором.",
+  },
+  {
+    q: "Яка мінімальна тривалість оренди?",
+    a: "Мінімальний термін оренди — 1 зміна (8 годин). Також можлива довготривала оренда на вигідних умовах.",
+  },
+];
+
+const homeFaqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: homeFaqItems.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+};
+
 export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans">
@@ -50,6 +79,7 @@ export default function HomePage() {
         />
         <meta property="og:url" content="https://technorent.ua/" />
         <script type="application/ld+json">{JSON.stringify(localBusinessJsonLd)}</script>
+        <script type="application/ld+json">{JSON.stringify(homeFaqJsonLd)}</script>
       </Helmet>
 
       <Header />
@@ -88,13 +118,36 @@ export default function HomePage() {
                 to="/vyviz-smittia"
                 className="shrink-0 rounded-full bg-primary px-7 py-3.5 text-[14px] font-bold text-dark transition-opacity hover:opacity-90 max-lg:w-full max-lg:text-center"
               >
-                Детальніше
+                Замовити вивіз сміття
               </Link>
             </div>
           </div>
         </section>
 
         <CallToAction />
+
+        {/* FAQ */}
+        <section className="w-full px-[120px] py-14 max-xl:px-8 max-md:px-4 max-md:py-8">
+          <h2 className="mb-8 text-center text-[32px] font-bold text-dark max-md:text-2xl">
+            Часті запитання
+          </h2>
+          <div className="mx-auto flex max-w-3xl flex-col gap-3">
+            {homeFaqItems.map((item) => (
+              <details
+                key={item.q}
+                className="group rounded-[14px] border border-border bg-white p-4"
+              >
+                <summary className="cursor-pointer list-none text-[15px] font-bold text-dark [&::-webkit-details-marker]:hidden">
+                  <span className="flex items-center justify-between gap-3">
+                    {item.q}
+                    <span className="shrink-0 text-primary transition-transform group-open:rotate-45">＋</span>
+                  </span>
+                </summary>
+                <p className="mt-3 text-[14px] leading-relaxed text-dark-text">{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

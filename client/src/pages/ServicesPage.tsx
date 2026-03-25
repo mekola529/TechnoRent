@@ -8,7 +8,7 @@ import { useOrderModal } from "../context/OrderModalContext";
 const services = [
   {
     title: "Оренда екскаваторів",
-    desc: "Гусеничні та колісні екскаватори для земляних робіт будь-якої складності. Копання котлованів, траншей, планування territory.",
+    desc: "Гусеничні та колісні екскаватори для земляних робіт будь-якої складності. Копання котлованів, траншей, планування території.",
     icon: "🏗️",
   },
   {
@@ -18,7 +18,7 @@ const services = [
   },
   {
     title: "Оренда бульдозерів",
-    desc: "Потужні бульдозери для підготовки будівельних майданчиків, зняття ґрунту, планування та вирівнювання territory.",
+    desc: "Потужні бульдозери для підготовки будівельних майданчиків, зняття ґрунту, планування та вирівнювання території.",
     icon: "🚧",
   },
   {
@@ -66,7 +66,7 @@ export default function ServicesPage() {
       <section className="w-full bg-dark px-[120px] py-16 max-xl:px-8 max-md:px-4 max-md:py-10">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="text-[42px] font-bold leading-tight text-white max-lg:text-3xl max-md:text-2xl">
-            Наші <span className="text-primary">послуги</span>
+            Оренда будівельної <span className="text-primary">техніки</span> у Львові
           </h1>
           <p className="mt-3 text-base font-medium text-gray-300 max-md:text-sm">
             Повний спектр послуг оренди будівельної техніки для вашого проєкту у Львові та Львівській області
@@ -93,7 +93,7 @@ export default function ServicesPage() {
             to="/vyviz-smittia"
             className="shrink-0 rounded-full bg-primary px-7 py-3.5 text-[14px] font-bold text-dark transition-opacity hover:opacity-90 max-lg:w-full max-lg:text-center"
           >
-            Детальніше
+            Замовити вивіз сміття
           </Link>
         </div>
       </section>

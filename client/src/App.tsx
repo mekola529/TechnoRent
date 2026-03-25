@@ -16,6 +16,7 @@ import AdminOverviewPage from "./pages/AdminOverviewPage";
 import ServicesPage from "./pages/ServicesPage";
 import DebrisRemovalPage from "./pages/DebrisRemovalPage";
 import ContactsPage from "./pages/ContactsPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import RequireAuth from "./components/RequireAuth";
 
 function ScrollToTop() {
@@ -55,6 +56,8 @@ function App() {
             <Route path="service-requests" element={<AdminServiceRequestsPage />} />
             <Route path="occupancy" element={<AdminOccupancyPage />} />
           </Route>
+
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </OrderModalProvider>
       </AuthProvider>

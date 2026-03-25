@@ -1,9 +1,63 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileTabBar from "../components/MobileTabBar";
 import { apiFetch } from "../api/client";
+
+/* ── Structured data ── */
+
+const serviceJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: "Вивіз будівельного сміття",
+  description:
+    "Оперативний вивіз будівельного сміття у Львові та Львівській області — бетон, цегла, ґрунт, демонтажні відходи.",
+  provider: {
+    "@type": "LocalBusiness",
+    name: "TechnoRent",
+    url: "https://technorent.ua",
+  },
+  areaServed: {
+    "@type": "Place",
+    name: "Львів та Львівська область",
+  },
+  url: "https://technorent.ua/vyviz-smittia",
+};
+
+const faqItems = [
+  {
+    q: "Скільки коштує вивіз будівельного сміття?",
+    a: "Вартість залежить від обсягу та типу відходів. Залиште заявку — менеджер розрахує точну вартість після уточнення деталей.",
+  },
+  {
+    q: "Як швидко ви можете вивезти сміття?",
+    a: "Зазвичай ми організовуємо вивіз протягом 1–2 днів після підтвердження заявки. У термінових випадках — в день звернення.",
+  },
+  {
+    q: "В яких районах ви працюєте?",
+    a: "Ми обслуговуємо Львів та всю Львівську область у радіусі до 100 км.",
+  },
+  {
+    q: "Які матеріали ви вивозите?",
+    a: "Бетон, цеглу, штукатурку, дерево, метал, гіпсокартон, утеплювач, залишки демонтажу та інше будівельне сміття.",
+  },
+  {
+    q: "Чи потрібно мені самостійно пакувати сміття?",
+    a: "Ні, наша бригада виконає завантаження. Але якщо сміття вже зібране у мішки — це пришвидшить процес.",
+  },
+];
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqItems.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+};
 
 /* ── Data ── */
 
@@ -126,6 +180,8 @@ export default function DebrisRemovalPage() {
           content="Замовте вивіз будівельного сміття у Львові та Львівській області. Швидке погодження, зручний вибір дати та часу, виїзд на адресу."
         />
         <link rel="canonical" href="https://technorent.ua/vyviz-smittia" />
+        <script type="application/ld+json">{JSON.stringify(serviceJsonLd)}</script>
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </Helmet>
 
       <Header />
@@ -232,6 +288,47 @@ export default function DebrisRemovalPage() {
               <p className="text-[13px] leading-relaxed text-dark-text">{s.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ═══════ FAQ ═══════ */}
+      <section className="w-full px-[120px] py-14 max-xl:px-8 max-md:px-4 max-md:py-8">
+        <h2 className="mb-8 text-center text-[32px] font-bold text-dark max-md:text-2xl">
+          Часті запитання
+        </h2>
+        <div className="mx-auto flex max-w-3xl flex-col gap-3">
+          {faqItems.map((item) => (
+            <details
+              key={item.q}
+              className="group rounded-[14px] border border-border bg-white p-4"
+            >
+              <summary className="cursor-pointer list-none text-[15px] font-bold text-dark [&::-webkit-details-marker]:hidden">
+                <span className="flex items-center justify-between gap-3">
+                  {item.q}
+                  <span className="shrink-0 text-primary transition-transform group-open:rotate-45">＋</span>
+                </span>
+              </summary>
+              <p className="mt-3 text-[14px] leading-relaxed text-dark-text">{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══════ Інтерлінкінг ═══════ */}
+      <section className="w-full bg-light-bg px-[120px] py-10 max-xl:px-8 max-md:px-4 max-md:py-6">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-4 text-center">
+          <Link
+            to="/catalog"
+            className="rounded-full border-2 border-primary px-6 py-3 text-[14px] font-bold text-dark transition-colors hover:bg-primary"
+          >
+            Каталог техніки в оренду
+          </Link>
+          <Link
+            to="/services"
+            className="rounded-full border-2 border-border px-6 py-3 text-[14px] font-bold text-dark transition-colors hover:border-primary hover:bg-primary"
+          >
+            Усі послуги TechnoRent
+          </Link>
         </div>
       </section>
 

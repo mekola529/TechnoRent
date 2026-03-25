@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function Footer() {
   return (
     <footer className="w-full bg-dark px-[120px] py-10 max-xl:px-8 max-md:px-4">
@@ -16,10 +18,11 @@ export default function Footer() {
         <nav aria-label="Навігація сайтом" className="flex flex-col gap-2">
           <h4 className="text-base font-bold text-white">Навігація</h4>
           <div className="flex flex-col gap-1 text-[13px] font-medium leading-[1.5] text-gray-100">
-            <a href="/" className="hover:text-primary transition-colors">Головна</a>
-            <a href="/catalog" className="hover:text-primary transition-colors">Техніка</a>
-            <a href="/services" className="hover:text-primary transition-colors">Послуги</a>
-            <a href="/contacts" className="hover:text-primary transition-colors">Контакти</a>
+            <Link to="/" className="hover:text-primary transition-colors">Головна</Link>
+            <Link to="/catalog" className="hover:text-primary transition-colors">Техніка</Link>
+            <Link to="/services" className="hover:text-primary transition-colors">Послуги</Link>
+            <Link to="/vyviz-smittia" className="hover:text-primary transition-colors">Вивіз сміття</Link>
+            <Link to="/contacts" className="hover:text-primary transition-colors">Контакти</Link>
           </div>
         </nav>
 

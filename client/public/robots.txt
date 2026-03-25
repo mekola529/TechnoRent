@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /admin/*
 
-Sitemap: https://technorent.ua/sitemap.xml
+Sitemap: https://technorent.ua/api/sitemap.xml

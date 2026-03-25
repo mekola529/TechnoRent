@@ -358,7 +358,7 @@ export default function DebrisRemovalPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
         >
-          <div className="relative max-h-[90vh] w-full max-w-[540px] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+          <div className="relative max-h-[90vh] w-full max-w-[540px] overflow-y-auto overflow-x-hidden rounded-2xl bg-white p-6 max-md:p-4 shadow-xl">
             {/* Close button */}
             <button
               onClick={() => setShowModal(false)}

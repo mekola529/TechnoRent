@@ -36,12 +36,12 @@ export default function Hero() {
           >
             Переглянути техніку
           </Link>
-          <button
+          {/* <button
             onClick={() => openOrderModal()}
             className="w-[190px] rounded-full border border-white py-3 text-center text-sm font-bold text-white transition-colors hover:bg-white/10"
           >
             Залишити заявку
-          </button>
+          </button> */}
           <Link
             to="/vyviz-smittia"
             className="rounded-full border border-primary px-[22px] py-3 text-sm font-bold text-primary transition-colors hover:bg-primary/10"

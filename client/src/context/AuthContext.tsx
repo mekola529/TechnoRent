@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => {
         localStorage.removeItem("admin_token");
         localStorage.removeItem("admin_user");
+        setAdmin(null);
       })
       .finally(() => setLoading(false));
   }, []);

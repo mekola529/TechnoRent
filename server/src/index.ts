@@ -93,13 +93,17 @@ app.use("/api/admin/occupancy", adminOccupancyRouter);
 app.use("/api/admin/upload", adminUploadRouter);
 app.use("/api/admin/service-requests", adminServiceRequestsRouter);
 
+import { existsSync } from "fs";
+
 // ─── Serve frontend in production ─────────────────
 if (process.env.NODE_ENV === "production") {
   const clientDist = path.join(__dirname, "../../client/dist");
-  app.use(express.static(clientDist));
-  app.get("/{*splat}", (_req, res) => {
-    res.sendFile(path.join(clientDist, "index.html"));
-  });
+  if (existsSync(clientDist)) {
+    app.use(express.static(clientDist));
+    app.get("/{*splat}", (_req, res) => {
+      res.sendFile(path.join(clientDist, "index.html"));
+    });
+  }
 }
 
 // ─── Start ────────────────────────────────────────

@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { useOrderModal } from "../context/OrderModalContext";
+// import { useOrderModal } from "../context/OrderModalContext";
 
 export default function Hero() {
-  const { openOrderModal } = useOrderModal();
+  // const { openOrderModal } = useOrderModal();
   return (
     <section
       aria-label="Оренда спецтехніки у Львові"

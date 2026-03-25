@@ -32,13 +32,13 @@ export default function Hero() {
         <div className="mt-1.5 flex flex-wrap gap-3">
           <Link
             to="/catalog"
-            className="min-w-[180px] rounded-full bg-primary px-[22px] py-3 text-center text-sm font-bold text-dark transition-opacity hover:opacity-90"
+            className="w-[190px] rounded-full bg-primary py-3 text-center text-sm font-bold text-dark transition-opacity hover:opacity-90"
           >
             Переглянути техніку
           </Link>
           <button
             onClick={() => openOrderModal()}
-            className="min-w-[180px] rounded-full border border-white px-[22px] py-3 text-center text-sm font-bold text-white transition-colors hover:bg-white/10"
+            className="w-[190px] rounded-full border border-white py-3 text-center text-sm font-bold text-white transition-colors hover:bg-white/10"
           >
             Залишити заявку
           </button>

@@ -37,3 +37,4 @@ client/dist
 
 # Uploads
 uploads
+.playwright-mcp/

@@ -24,6 +24,7 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [touched, setTouched] = useState(false);
 
   const update = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -50,7 +51,8 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
   }, []);
 
   const handleSubmit = async () => {
-    if (!form.name.trim() || form.phone.length < 5) return;
+    setTouched(true);
+    if (!form.name.trim() || form.phone.length < 10) return;
     setSending(true);
     setError("");
 
@@ -75,7 +77,8 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
       onClick={onClose}
     >
       <div
@@ -120,12 +123,12 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
             )}
 
             <div className="flex flex-col gap-3">
-              <Field label="Ім'я" required>
-                <Input placeholder="Введіть ім'я" value={form.name} onChange={(v) => update("name", v)} />
+              <Field label="Ім'я" required error={touched && !form.name.trim() ? "Вкажіть ваше ім'я" : ""}>
+                <Input placeholder="Введіть ім'я" value={form.name} onChange={(v) => update("name", v)} error={touched && !form.name.trim()} />
               </Field>
 
-              <Field label="Мобільний" required>
-                <Input placeholder="+380" value={form.phone} onChange={(v) => update("phone", v)} type="tel" />
+              <Field label="Мобільний" required error={touched && form.phone.length < 10 ? "Вкажіть коректний номер" : ""}>
+                <Input placeholder="+380" value={form.phone} onChange={(v) => update("phone", v)} type="tel" error={touched && form.phone.length < 10} />
               </Field>
 
               {isDetailed && (
@@ -195,11 +198,13 @@ function Field({
   required,
   className,
   children,
+  error,
 }: {
   label: string;
   required?: boolean;
   className?: string;
   children: React.ReactNode;
+  error?: string;
 }) {
   return (
     <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
@@ -208,6 +213,7 @@ function Field({
         {required && <span className="text-primary"> *</span>}
       </span>
       {children}
+      {error && <span className="text-xs font-medium text-red-500">{error}</span>}
     </div>
   );
 }
@@ -217,11 +223,13 @@ function Input({
   value,
   onChange,
   type = "text",
+  error,
 }: {
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  error?: boolean;
 }) {
   return (
     <input
@@ -229,7 +237,7 @@ function Input({
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full max-w-full rounded-[10px] border border-border bg-white px-3.5 py-3 text-base font-medium text-dark outline-none placeholder:text-[#8A8A8A] focus:border-primary md:text-[13px]"
+      className={`w-full max-w-full rounded-[10px] border bg-white px-3.5 py-3 text-base font-medium text-dark outline-none placeholder:text-[#8A8A8A] focus:border-primary md:text-[13px] ${error ? "border-red-400" : "border-border"}`}
     />
   );
 }

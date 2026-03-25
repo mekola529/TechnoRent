@@ -19,8 +19,10 @@ export async function apiFetch<T>(
     if (res.status === 401) {
       localStorage.removeItem("admin_token");
       localStorage.removeItem("admin_user");
-      window.location.href = "/admin";
-      throw new Error("Сесія закінчилась. Увійдіть знову.");
+      if (window.location.pathname !== "/admin") {
+        window.location.href = "/admin";
+      }
+      throw new Error(body.error || "Невірний логін або пароль");
     }
 
     throw new Error(body.error || `HTTP ${res.status}`);

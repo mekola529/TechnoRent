@@ -20,7 +20,7 @@ export default function WhyChooseUs() {
         />
         <div className="absolute inset-0 bg-black/40" />
         <h2 className="absolute inset-0 flex items-center justify-center text-center text-[34px] font-bold leading-tight text-white max-lg:text-2xl max-md:text-xl">
-          Чому обирають
+          Чому обирають{" "}
           <br />
           <span className="text-primary">TechnoRent</span>
         </h2>

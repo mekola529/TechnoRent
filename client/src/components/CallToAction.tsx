@@ -7,9 +7,11 @@ export default function CallToAction() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [touched, setTouched] = useState(false);
 
   async function handleCallbackSubmit() {
-    if (!name.trim() || phone.length < 5) return;
+    setTouched(true);
+    if (!name.trim() || phone.length < 10) return;
     setSending(true);
     setError("");
     try {
@@ -54,16 +56,18 @@ export default function CallToAction() {
               placeholder="Введіть імʼя"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full max-w-full rounded-[10px] border border-border bg-[#F9FAFB] px-3 py-3 text-base font-medium text-dark-text placeholder:text-[#98A2B3] outline-none focus:ring-2 focus:ring-primary md:text-[13px]"
+              className={`w-full max-w-full rounded-[10px] border bg-[#F9FAFB] px-3 py-3 text-base font-medium text-dark-text placeholder:text-[#98A2B3] outline-none focus:ring-2 focus:ring-primary md:text-[13px] ${touched && !name.trim() ? "border-red-400" : "border-border"}`}
             />
+            {touched && !name.trim() && <span className="text-xs font-medium text-red-500">Вкажіть ваше ім'я</span>}
             <label className="text-xs font-bold text-dark-text">Телефон</label>
             <input
               type="tel"
               placeholder="+380"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full max-w-full rounded-[10px] border border-border bg-[#F9FAFB] px-3 py-3 text-base font-medium text-dark-text placeholder:text-[#98A2B3] outline-none focus:ring-2 focus:ring-primary md:text-[13px]"
+              className={`w-full max-w-full rounded-[10px] border bg-[#F9FAFB] px-3 py-3 text-base font-medium text-dark-text placeholder:text-[#98A2B3] outline-none focus:ring-2 focus:ring-primary md:text-[13px] ${touched && phone.length < 10 ? "border-red-400" : "border-border"}`}
             />
+            {touched && phone.length < 10 && <span className="text-xs font-medium text-red-500">Вкажіть коректний номер</span>}
             {error && (
               <p className="text-xs font-semibold text-red-500">{error}</p>
             )}

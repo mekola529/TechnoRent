@@ -41,7 +41,7 @@ export default function AdminLoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-light-bg font-sans">
       <Helmet>
-        <title>Admin Login | TechnoRent</title>
+        <title>Вхід в панель | TechnoRent</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <form
@@ -70,6 +70,7 @@ export default function AdminLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               className="h-12 rounded-[10px] border border-border bg-white px-3.5 text-sm font-medium text-dark outline-none placeholder:text-[#9A9A9A] focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -85,6 +86,7 @@ export default function AdminLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               className="h-12 rounded-[10px] border border-border bg-white px-3.5 text-sm font-medium text-dark outline-none placeholder:text-[#9A9A9A] focus:ring-2 focus:ring-primary"
             />
           </div>

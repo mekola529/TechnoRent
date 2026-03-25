@@ -62,6 +62,7 @@ export default function DebrisRemovalPage() {
   const [sending, setSending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [showModal, setShowModal] = useState(false);
 
   const update = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -102,6 +103,7 @@ export default function DebrisRemovalPage() {
         }),
       });
       setSubmitted(true);
+      setForm({ name: "", phone: "+380", address: "", date: "", time: "", comment: "" });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Помилка надсилання");
     } finally {
@@ -109,8 +111,10 @@ export default function DebrisRemovalPage() {
     }
   }
 
-  function scrollToForm() {
-    document.getElementById("debris-form")?.scrollIntoView({ behavior: "smooth" });
+  function openModal() {
+    setSubmitted(false);
+    setSubmitError("");
+    setShowModal(true);
   }
 
   return (
@@ -149,7 +153,7 @@ export default function DebrisRemovalPage() {
             Працюємо по Львову та Львівській області.
           </p>
           <button
-            onClick={scrollToForm}
+            onClick={openModal}
             className="mt-1 w-fit rounded-full bg-primary px-7 py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
           >
             Замовити вивіз
@@ -231,134 +235,6 @@ export default function DebrisRemovalPage() {
         </div>
       </section>
 
-      {/* ═══════ Форма заявки ═══════ */}
-      <section
-        id="debris-form"
-        className="w-full px-[120px] py-14 max-xl:px-8 max-md:px-4 max-md:py-8"
-      >
-        <div className="mx-auto max-w-[640px]">
-          <h2 className="mb-2 text-center text-[32px] font-bold text-dark max-md:text-2xl">
-            Залишити заявку
-          </h2>
-          <p className="mb-8 text-center text-sm font-medium text-dark-text">
-            Заповніть форму — ми зв'яжемося з вами для підтвердження
-          </p>
-
-          {submitted ? (
-            <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-light-bg py-14">
-              <span className="text-5xl">✅</span>
-              <h3 className="text-2xl font-bold text-dark">Заявку надіслано!</h3>
-              <p className="max-w-sm text-center text-sm font-medium text-dark-text">
-                Ми зв'яжемося з вами найближчим часом для уточнення деталей вивозу.
-              </p>
-              <button
-                onClick={() => {
-                  setSubmitted(false);
-                  setForm({ name: "", phone: "+380", address: "", date: "", time: "", comment: "" });
-                }}
-                className="mt-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
-              >
-                Нова заявка
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-              {/* Зверху — badge типу послуги */}
-              <div className="flex items-center gap-2 rounded-[10px] bg-light-bg p-3">
-                <span className="text-lg">🚛</span>
-                <span className="text-sm font-bold text-dark">Вивіз будівельного сміття</span>
-              </div>
-
-              {/* Ім'я */}
-              <FormField label="Ім'я" required error={errors.name}>
-                <input
-                  type="text"
-                  placeholder="Введіть ваше ім'я"
-                  value={form.name}
-                  onChange={(e) => update("name", e.target.value)}
-                  className={inputClass(errors.name)}
-                />
-              </FormField>
-
-              {/* Телефон */}
-              <FormField label="Телефон" required error={errors.phone}>
-                <input
-                  type="tel"
-                  placeholder="+380 ..."
-                  value={form.phone}
-                  onChange={(e) => update("phone", e.target.value)}
-                  className={inputClass(errors.phone)}
-                />
-              </FormField>
-
-              {/* Адреса */}
-              <FormField label="Адреса вивозу" required error={errors.address}>
-                <input
-                  type="text"
-                  placeholder="Місто, вулиця, будинок"
-                  value={form.address}
-                  onChange={(e) => update("address", e.target.value)}
-                  className={inputClass(errors.address)}
-                />
-              </FormField>
-
-              {/* Дата та час */}
-              <div className="flex gap-3 max-[480px]:flex-col">
-                <FormField label="Дата вивозу" required error={errors.date} className="min-w-0 flex-1">
-                  <input
-                    type="date"
-                    min={todayISO()}
-                    value={form.date}
-                    onChange={(e) => update("date", e.target.value)}
-                    className={inputClass(errors.date)}
-                  />
-                </FormField>
-
-                <FormField label="Бажаний час" required error={errors.time} className="min-w-0 flex-1">
-                  <select
-                    value={form.time}
-                    onChange={(e) => update("time", e.target.value)}
-                    className={inputClass(errors.time)}
-                  >
-                    <option value="">— Оберіть час —</option>
-                    {timeSlots.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </FormField>
-              </div>
-
-              {/* Коментар */}
-              <FormField label="Коментар (необов'язково)">
-                <textarea
-                  placeholder="Опишіть обсяг, тип сміття або інші деталі…"
-                  value={form.comment}
-                  onChange={(e) => update("comment", e.target.value)}
-                  rows={3}
-                  className="w-full resize-none rounded-[10px] border border-border bg-white px-3.5 py-3 text-base font-medium text-dark outline-none placeholder:text-[#8A8A8A] focus:border-primary md:text-[13px]"
-                />
-              </FormField>
-
-              <p className="text-xs font-semibold text-dark-text">
-                * Обов'язкові поля
-              </p>
-
-              {submitError && (
-                <p className="text-xs font-semibold text-red-500">{submitError}</p>
-              )}
-
-              <button
-                type="submit"
-                disabled={sending}
-                className="w-full rounded-full bg-primary py-3.5 text-sm font-bold text-dark transition-opacity hover:opacity-90 disabled:opacity-60"
-              >
-                {sending ? "Надсилання…" : "Замовити вивіз"}
-              </button>
-            </form>
-          )}
-        </div>
-      </section>
-
       {/* ═══════ Заключний CTA ═══════ */}
       <section className="w-full px-[120px] py-14 max-xl:px-8 max-md:px-4 max-md:py-8">
         <div className="mx-auto max-w-2xl rounded-[18px] bg-dark p-10 text-center max-md:p-6">
@@ -369,7 +245,7 @@ export default function DebrisRemovalPage() {
             Ми швидко організуємо вивіз — залиште заявку і ми зв'яжемося з вами
           </p>
           <button
-            onClick={scrollToForm}
+            onClick={openModal}
             className="mt-5 rounded-full bg-primary px-8 py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
           >
             Залишити заявку
@@ -378,6 +254,133 @@ export default function DebrisRemovalPage() {
       </section>
 
       <Footer />
+
+      {/* ═══════ Модальне вікно форми ═══════ */}
+      {showModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
+        >
+          <div className="relative max-h-[90vh] w-full max-w-[540px] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            {/* Close button */}
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-dark"
+            >
+              ✕
+            </button>
+
+            {submitted ? (
+              <div className="flex flex-col items-center gap-4 py-10">
+                <span className="text-5xl">✅</span>
+                <h3 className="text-2xl font-bold text-dark">Заявку надіслано!</h3>
+                <p className="max-w-sm text-center text-sm font-medium text-dark-text">
+                  Ми зв'яжемося з вами найближчим часом для уточнення деталей вивозу.
+                </p>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="mt-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
+                >
+                  Закрити
+                </button>
+              </div>
+            ) : (
+              <>
+                <h2 className="mb-1 text-[22px] font-bold text-dark">Залишити заявку</h2>
+                <p className="mb-5 text-sm font-medium text-dark-text">
+                  Заповніть форму — ми зв'яжемося з вами для підтвердження
+                </p>
+
+                <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2 rounded-[10px] bg-light-bg p-3">
+                    <span className="text-lg">🚛</span>
+                    <span className="text-sm font-bold text-dark">Вивіз будівельного сміття</span>
+                  </div>
+
+                  <FormField label="Ім'я" required error={errors.name}>
+                    <input
+                      type="text"
+                      placeholder="Введіть ваше ім'я"
+                      value={form.name}
+                      onChange={(e) => update("name", e.target.value)}
+                      className={inputClass(errors.name)}
+                    />
+                  </FormField>
+
+                  <FormField label="Телефон" required error={errors.phone}>
+                    <input
+                      type="tel"
+                      placeholder="+380 ..."
+                      value={form.phone}
+                      onChange={(e) => update("phone", e.target.value)}
+                      className={inputClass(errors.phone)}
+                    />
+                  </FormField>
+
+                  <FormField label="Адреса вивозу" required error={errors.address}>
+                    <input
+                      type="text"
+                      placeholder="Місто, вулиця, будинок"
+                      value={form.address}
+                      onChange={(e) => update("address", e.target.value)}
+                      className={inputClass(errors.address)}
+                    />
+                  </FormField>
+
+                  <div className="flex gap-3 max-[480px]:flex-col">
+                    <FormField label="Дата вивозу" required error={errors.date} className="min-w-0 flex-1">
+                      <input
+                        type="date"
+                        min={todayISO()}
+                        value={form.date}
+                        onChange={(e) => update("date", e.target.value)}
+                        className={inputClass(errors.date)}
+                      />
+                    </FormField>
+
+                    <FormField label="Бажаний час" required error={errors.time} className="min-w-0 flex-1">
+                      <select
+                        value={form.time}
+                        onChange={(e) => update("time", e.target.value)}
+                        className={inputClass(errors.time)}
+                      >
+                        <option value="">— Оберіть час —</option>
+                        {timeSlots.map((t) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </FormField>
+                  </div>
+
+                  <FormField label="Коментар (необов'язково)">
+                    <textarea
+                      placeholder="Опишіть обсяг, тип сміття або інші деталі…"
+                      value={form.comment}
+                      onChange={(e) => update("comment", e.target.value)}
+                      rows={3}
+                      className="w-full resize-none rounded-[10px] border border-border bg-white px-3.5 py-3 text-base font-medium text-dark outline-none placeholder:text-[#8A8A8A] focus:border-primary md:text-[13px]"
+                    />
+                  </FormField>
+
+                  <p className="text-xs font-semibold text-dark-text">* Обов'язкові поля</p>
+
+                  {submitError && (
+                    <p className="text-xs font-semibold text-red-500">{submitError}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    className="w-full rounded-full bg-primary py-3.5 text-sm font-bold text-dark transition-opacity hover:opacity-90 disabled:opacity-60"
+                  >
+                    {sending ? "Надсилання…" : "Замовити вивіз"}
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

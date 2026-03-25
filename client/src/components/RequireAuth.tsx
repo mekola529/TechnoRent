@@ -7,7 +7,11 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-light-bg font-sans">
-        <p className="text-lg font-medium text-dark-text">Завантаження...</p>
+        <div className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
+          <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
+          <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-primary" />
+        </div>
       </div>
     );
   }

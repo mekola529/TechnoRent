@@ -8,6 +8,7 @@ import {
 import { equipmentTypeLabels } from "../data/types";
 import type { Equipment, EquipmentType } from "../data/types";
 import EquipmentCard from "../components/EquipmentCard";
+import Skeleton, { CatalogCardSkeleton } from "../components/Skeleton";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileTabBar from "../components/MobileTabBar";
@@ -134,7 +135,7 @@ export default function CatalogPage() {
           {/* Sort bar */}
           <div className="flex items-center justify-between rounded-xl bg-light-bg px-3.5 py-2.5">
             <span className="text-sm font-semibold text-dark">
-              {loading ? "Завантаження..." : `${equipment.length} позицій`}
+              {loading ? <Skeleton className="inline-block h-4 w-16" /> : `${equipment.length} позицій`}
             </span>
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-dark-text">Сортування:</span>
@@ -154,8 +155,10 @@ export default function CatalogPage() {
 
           {/* Equipment Grid */}
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <p className="text-lg font-medium text-dark-text">Завантаження...</p>
+            <div className="grid grid-cols-3 gap-4 max-xl:grid-cols-2 max-md:grid-cols-1">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <CatalogCardSkeleton key={i} />
+              ))}
             </div>
           ) : equipment.length > 0 ? (
             <div className="grid grid-cols-3 gap-4 max-xl:grid-cols-2 max-md:grid-cols-1">

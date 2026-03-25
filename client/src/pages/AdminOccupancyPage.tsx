@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { apiFetch } from "../api/client";
+import Skeleton from "../components/Skeleton";
 import {
   AdminPageHeader,
   AdminCard,
@@ -287,7 +288,39 @@ export default function AdminOccupancyPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-gray-400">Завантаження…</p>;
+    return (
+      <>
+        <AdminPageHeader title="Керування зайнятістю" subtitle="" />
+        <div className="flex flex-1 flex-col gap-4 lg:flex-row">
+          {/* Calendar skeleton */}
+          <AdminCard className="flex flex-1 flex-col gap-3 !p-4">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-7 w-36" />
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <Skeleton key={`wh-${i}`} className="h-4 w-full" />
+              ))}
+              {Array.from({ length: 35 }).map((_, i) => (
+                <Skeleton key={`cd-${i}`} className="h-8 w-full !rounded-lg" />
+              ))}
+            </div>
+          </AdminCard>
+          {/* List skeleton */}
+          <AdminCard className="flex w-full flex-col gap-3 !p-4 lg:w-[340px]">
+            <Skeleton className="h-5 w-32" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-1.5 rounded-lg border border-gray-100 p-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+                <Skeleton className="h-5 w-20 !rounded-full" />
+              </div>
+            ))}
+          </AdminCard>
+        </div>
+      </>
+    );
   }
 
   /* ── Render ────────────────────────────────────── */

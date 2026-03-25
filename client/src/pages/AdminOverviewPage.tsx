@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { apiFetch } from "../api/client";
+import Skeleton from "../components/Skeleton";
 import {
   AdminPageHeader,
   AdminCard,
@@ -137,7 +138,38 @@ export default function AdminOverviewPage() {
   }, [periods]);
 
   if (loading) {
-    return <p className="text-sm text-gray-400">Завантаження…</p>;
+    return (
+      <>
+        <AdminPageHeader title="Огляд" subtitle="" />
+        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <AdminCard key={i} className="flex flex-col gap-2 !p-4">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-7 w-12" />
+            </AdminCard>
+          ))}
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <AdminCard key={i} className="flex flex-col gap-3 !p-4">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-7 w-24" />
+              </div>
+              {Array.from({ length: 3 }).map((_, j) => (
+                <div key={j} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2.5">
+                  <div className="flex flex-col gap-1.5">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                  <Skeleton className="h-5 w-16 !rounded-full" />
+                </div>
+              ))}
+            </AdminCard>
+          ))}
+        </div>
+      </>
+    );
   }
 
   return (

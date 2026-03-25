@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api/client";
+import { AdminTableRowsSkeleton } from "../components/Skeleton";
 import {
   AdminPageHeader,
   AdminButton,
@@ -165,7 +166,7 @@ export default function AdminServiceRequestsPage() {
           {/* Rows */}
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <p className="py-12 text-center text-sm text-gray-400">Завантаження…</p>
+              <AdminTableRowsSkeleton rows={6} cols={5} />
             ) : filtered.length === 0 ? (
               <p className="py-12 text-center text-sm text-gray-400">Заявок не знайдено</p>
             ) : (

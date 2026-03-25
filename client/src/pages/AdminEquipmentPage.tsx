@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { apiFetch } from "../api/client";
+import { AdminTableRowsSkeleton } from "../components/Skeleton";
 import {
   AdminPageHeader,
   AdminButton,
@@ -820,7 +821,7 @@ export default function AdminEquipmentPage() {
         </div>
 
         {loading ? (
-          <p className="py-10 text-center text-sm text-gray-400">Завантаження…</p>
+          <AdminTableRowsSkeleton rows={6} cols={5} />
         ) : filtered.length === 0 ? (
           <p className="py-10 text-center text-sm text-gray-400">
             {items.length === 0 ? "Техніка відсутня" : "Нічого не знайдено"}

@@ -7,6 +7,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileTabBar from "../components/MobileTabBar";
 import OrderModal from "../components/OrderModal";
+import Skeleton from "../components/Skeleton";
 
 /** Генерує масив днів місяця */
 function getMonthDays(year: number, month: number) {
@@ -67,9 +68,39 @@ export default function EquipmentDetailPage() {
       <div className="flex min-h-screen flex-col bg-white font-sans">
         <Header />
         <MobileTabBar />
-        <div className="flex flex-1 items-center justify-center py-20">
-          <p className="text-lg font-medium text-dark-text">Завантаження...</p>
-        </div>
+        {/* Breadcrumb skeleton */}
+        <nav className="px-[120px] pt-2 max-xl:px-8 max-md:px-4">
+          <Skeleton className="h-4 w-40" />
+        </nav>
+        {/* Hero skeleton */}
+        <section className="flex gap-6 px-[120px] py-4 max-xl:px-8 max-lg:flex-col max-md:px-4">
+          <Skeleton className="h-[420px] flex-1 !rounded-[18px] max-lg:h-[280px]" />
+          <div className="flex h-[420px] flex-1 flex-col gap-3 rounded-2xl bg-light-bg p-5 max-lg:h-auto">
+            <Skeleton className="h-10 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="mt-1 h-8 w-32" />
+            <Skeleton className="h-10 w-40 !rounded-full" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        </section>
+        {/* Specs + Calendar skeleton */}
+        <section className="flex gap-6 px-[120px] pb-6 max-xl:px-8 max-lg:flex-col max-md:px-4">
+          <div className="flex w-full flex-col gap-3 rounded-2xl border border-border bg-white p-5">
+            <Skeleton className="h-7 w-40" />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-4 w-full max-w-[300px]" />
+            ))}
+          </div>
+          <div className="flex w-full flex-col gap-3 rounded-2xl border border-border bg-white p-5">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-7 w-48" />
+              <Skeleton className="h-5 w-28" />
+            </div>
+            <Skeleton className="h-48 w-full !rounded-lg" />
+          </div>
+        </section>
+        <div className="mt-16" />
         <Footer />
       </div>
     );

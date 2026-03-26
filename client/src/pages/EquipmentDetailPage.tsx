@@ -8,6 +8,8 @@ import Footer from "../components/Footer";
 import MobileTabBar from "../components/MobileTabBar";
 import OrderModal from "../components/OrderModal";
 import Skeleton from "../components/Skeleton";
+import EquipmentCard from "../components/EquipmentCard";
+import { useRecentlyViewed } from "../hooks/useRecentlyViewed";
 
 /** Генерує масив днів місяця */
 function getMonthDays(year: number, month: number) {
@@ -43,6 +45,8 @@ export default function EquipmentDetailPage() {
   const [calYear, setCalYear] = useState(now.getFullYear());
   const [calMonth, setCalMonth] = useState(now.getMonth());
 
+  const recentlyViewed = useRecentlyViewed(item);
+
   function prevMonth() {
     if (calMonth === 0) { setCalMonth(11); setCalYear((y) => y - 1); }
     else setCalMonth((m) => m - 1);
@@ -72,10 +76,10 @@ export default function EquipmentDetailPage() {
         <nav className="px-[120px] pt-2 max-xl:px-8 max-md:px-4">
           <Skeleton className="h-4 w-40" />
         </nav>
-        {/* Hero skeleton */}
-        <section className="flex gap-6 px-[120px] py-4 max-xl:px-8 max-lg:flex-col max-md:px-4">
-          <Skeleton className="h-[420px] flex-1 !rounded-[18px] max-lg:h-[280px]" />
-          <div className="flex h-[420px] flex-1 flex-col gap-3 rounded-2xl bg-light-bg p-5 max-lg:h-auto">
+        {/* Grid skeleton */}
+        <section className="grid grid-cols-2 gap-6 px-[120px] py-6 max-xl:px-8 max-lg:grid-cols-1 max-md:px-4">
+          <Skeleton className="min-h-[400px] !rounded-2xl max-lg:min-h-[280px]" />
+          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-6">
             <Skeleton className="h-10 w-3/4" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-2/3" />
@@ -83,16 +87,13 @@ export default function EquipmentDetailPage() {
             <Skeleton className="h-10 w-40 !rounded-full" />
             <Skeleton className="h-4 w-48" />
           </div>
-        </section>
-        {/* Specs + Calendar skeleton */}
-        <section className="flex gap-6 px-[120px] pb-6 max-xl:px-8 max-lg:flex-col max-md:px-4">
-          <div className="flex w-full flex-col gap-3 rounded-2xl border border-border bg-white p-5">
+          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-6">
             <Skeleton className="h-7 w-40" />
             {Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-4 w-full max-w-[300px]" />
             ))}
           </div>
-          <div className="flex w-full flex-col gap-3 rounded-2xl border border-border bg-white p-5">
+          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-6">
             <div className="flex items-center justify-between">
               <Skeleton className="h-7 w-48" />
               <Skeleton className="h-5 w-28" />
@@ -182,9 +183,10 @@ export default function EquipmentDetailPage() {
         </ol>
       </nav>
 
-      {/* Hero: Image + Side panel */}
-      <section className="flex gap-6 px-[120px] py-4 max-xl:px-8 max-lg:flex-col max-md:px-4">
-        <div className="h-[420px] flex-1 overflow-hidden rounded-[18px] bg-[#2B2B2B] max-lg:h-[280px] max-lg:w-full">
+      {/* 2×2 Grid: Image + Info / Specs + Calendar */}
+      <section className="grid grid-cols-2 gap-6 px-[120px] py-6 max-xl:px-8 max-lg:grid-cols-1 max-md:px-4">
+        {/* Image */}
+        <div className="h-[420px] overflow-hidden rounded-2xl border border-border bg-[#2B2B2B] max-lg:h-[280px]">
           {item.images[0] && (
             <img
               src={item.images[0].url}
@@ -196,7 +198,9 @@ export default function EquipmentDetailPage() {
             />
           )}
         </div>
-        <div className="flex h-[420px] flex-1 flex-col gap-3 rounded-2xl bg-light-bg p-5 max-lg:h-auto max-lg:w-full">
+
+        {/* Info */}
+        <div className="flex h-[420px] flex-col gap-3 overflow-y-auto rounded-2xl border border-border bg-white p-6 max-lg:h-auto">
           <h1 className="text-[44px] font-bold text-dark max-lg:text-3xl">{item.name}</h1>
           <p className="text-[15px] font-medium text-dark-text">{item.description}</p>
           <p className="text-[30px] font-bold text-primary">{formatPrice(item.pricePerHour)}</p>
@@ -208,11 +212,9 @@ export default function EquipmentDetailPage() {
           </button>
           <p className="text-[13px] font-bold text-dark">Найближча доступність: {nextAvailable}</p>
         </div>
-      </section>
 
-      {/* Specs + Calendar */}
-      <section className="flex gap-6 px-[120px] pb-6 max-xl:px-8 max-lg:flex-col max-md:px-4">
-        <div className="flex w-full flex-col gap-3 rounded-2xl border border-border bg-white p-5">
+        {/* Specs */}
+        <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-6">
           <h2 className="text-[26px] font-bold text-dark">Характеристики</h2>
           <div className="flex flex-col gap-1">
             {item.specs.map((spec) => (
@@ -223,7 +225,8 @@ export default function EquipmentDetailPage() {
           </div>
         </div>
 
-        <div className="flex w-full flex-col gap-3 rounded-2xl border border-border bg-white p-5">
+        {/* Calendar */}
+        <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-[22px] font-bold text-dark">Календар зайнятості</h2>
             <div className="flex items-center gap-2">
@@ -262,6 +265,18 @@ export default function EquipmentDetailPage() {
           )}
         </div>
       </section>
+
+      {/* Recently viewed */}
+      {recentlyViewed.length > 0 && (
+        <section className="px-[120px] pb-10 max-xl:px-8 max-md:px-4">
+          <h2 className="mb-5 text-[26px] font-bold text-dark">Нещодавно переглянута техніка</h2>
+          <div className="grid grid-cols-4 gap-5 max-xl:grid-cols-3 max-lg:grid-cols-2 max-md:flex max-md:flex-nowrap max-md:snap-x max-md:snap-mandatory max-md:overflow-x-auto max-md:scroll-smooth max-md:-mx-4 max-md:px-4 max-md:pb-4 max-md:gap-4">
+            {recentlyViewed.slice(0, 4).map((eq) => (
+              <EquipmentCard key={eq.id} item={eq} maxWidth />
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="mt-16" />
       <Footer />

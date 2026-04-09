@@ -531,7 +531,7 @@ export default function AdminServicesPage() {
           title="Скасувати зміни?"
           message="Ви маєте незбережені зміни. Закрити форму без збереження?"
           confirmLabel="Так, закрити"
-          confirmVariant="danger"
+          variant="danger"
           onConfirm={closeFormImmediately}
           onCancel={() => setDiscardModalOpen(false)}
         />
@@ -543,7 +543,7 @@ export default function AdminServicesPage() {
             title="Видалити послугу?"
             message={`Ви впевнені, що хочете видалити «${deleteTarget.name}»? Цю дію не можна скасувати.`}
             confirmLabel="Видалити"
-            confirmVariant="danger"
+            variant="danger"
             onConfirm={() => handleDelete(deleteTarget.id)}
             onCancel={() => setDeleteTarget(null)}
           />
@@ -640,7 +640,7 @@ export default function AdminServicesPage() {
           title="Видалити послугу?"
           message={`Ви впевнені, що хочете видалити «${deleteTarget.name}»? Цю дію не можна скасувати.`}
           confirmLabel="Видалити"
-          confirmVariant="danger"
+          variant="danger"
           onConfirm={() => handleDelete(deleteTarget.id)}
           onCancel={() => setDeleteTarget(null)}
         />

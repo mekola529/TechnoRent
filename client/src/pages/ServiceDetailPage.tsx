@@ -224,8 +224,8 @@ export default function ServiceDetailPage() {
           Техніка для цієї послуги
         </h2>
         {loadingEquipment ? (
-          <div className="grid grid-cols-3 gap-5 max-xl:grid-cols-2 max-md:grid-cols-1">
-            {Array.from({ length: 3 }).map((_, i) => (
+          <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1">
+            {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex flex-col gap-3 rounded-2xl border border-border p-4">
                 <Skeleton className="h-[180px] w-full !rounded-xl" />
                 <Skeleton className="h-6 w-3/4" />
@@ -234,7 +234,7 @@ export default function ServiceDetailPage() {
             ))}
           </div>
         ) : equipment.length > 0 ? (
-          <div className="grid grid-cols-3 gap-5 max-xl:grid-cols-2 max-md:grid-cols-1">
+          <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1">
             {equipment.map((eq) => (
               <EquipmentCard key={eq.id} item={eq} />
             ))}

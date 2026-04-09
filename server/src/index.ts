@@ -1,7 +1,6 @@
 import { config } from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { execSync } from "child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -118,15 +117,58 @@ if (process.env.NODE_ENV === "production") {
   }
 }
 
-// ─── Sync DB schema & Start ──────────────────────
-try {
-  console.log("Running prisma db push...");
-  execSync("npx prisma db push --skip-generate", { stdio: "inherit" });
-  console.log("DB schema synced.");
-} catch (e) {
-  console.error("prisma db push failed:", e);
+// ─── Ensure Service table exists & Start ─────────
+async function ensureServiceTable() {
+  try {
+    // Create PricingType enum if it doesn't exist
+    await prisma.$executeRawUnsafe(`
+      DO $$ BEGIN
+        CREATE TYPE "PricingType" AS ENUM ('fixed_from', 'hourly_from', 'calculator', 'custom');
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$;
+    `);
+
+    // Create Service table if it doesn't exist
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "Service" (
+        "id" TEXT NOT NULL,
+        "slug" TEXT NOT NULL,
+        "title" TEXT NOT NULL,
+        "shortDescription" TEXT NOT NULL,
+        "fullDescription" TEXT NOT NULL,
+        "image" TEXT NOT NULL,
+        "priceInfo" TEXT NOT NULL,
+        "pricingType" "PricingType" NOT NULL DEFAULT 'custom',
+        "relatedEquipmentTypes" "EquipmentType"[],
+        "features" TEXT[],
+        "seoTitle" TEXT NOT NULL,
+        "seoDescription" TEXT NOT NULL,
+        "isActive" BOOLEAN NOT NULL DEFAULT true,
+        "sortOrder" INTEGER NOT NULL DEFAULT 0,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL,
+        CONSTRAINT "Service_pkey" PRIMARY KEY ("id")
+      );
+    `);
+
+    // Create unique index on slug
+    await prisma.$executeRawUnsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS "Service_slug_key" ON "Service"("slug");
+    `);
+
+    // Create composite index
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "Service_isActive_sortOrder_idx" ON "Service"("isActive", "sortOrder");
+    `);
+
+    console.log("Service table ensured.");
+  } catch (e) {
+    console.error("ensureServiceTable failed:", e);
+  }
 }
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+ensureServiceTable().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
 });

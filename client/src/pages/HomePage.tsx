@@ -115,7 +115,7 @@ export default function HomePage() {
 
               {/* CTA */}
               <Link
-                to="/vyviz-smittia"
+                to="/services/vyviz-budivelnogo-smittia"
                 className="shrink-0 rounded-full bg-primary px-7 py-3.5 text-[14px] font-bold text-dark transition-opacity hover:opacity-90 max-lg:w-full max-lg:text-center"
               >
                 Замовити вивіз сміття

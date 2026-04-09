@@ -159,7 +159,37 @@ model Admin {
   createdAt    DateTime  @default(now())
 }
 
+// ─── Послуги (Services) ───────────────────────────
+
+model Service {
+  id                    String          @id @default(cuid())
+  slug                  String          @unique
+  title                 String
+  shortDescription      String
+  fullDescription       String
+  image                 String
+  priceInfo             String
+  pricingType           PricingType     @default(custom)
+  relatedEquipmentTypes EquipmentType[]
+  features              String[]
+  seoTitle              String
+  seoDescription        String
+  isActive              Boolean         @default(true)
+  sortOrder             Int             @default(0)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
 // ─── Enums ────────────────────────────────────────
+
+enum PricingType {
+  fixed_from
+  hourly_from
+  calculator
+  custom
+}
 
 enum EquipmentType {
   excavator

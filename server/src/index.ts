@@ -22,6 +22,8 @@ import { adminUploadRouter } from "./routes/admin.upload.js";
 import { adminRentOrdersRouter } from "./routes/admin.rent-orders.js";
 import { serviceRequestsRouter } from "./routes/service-requests.js";
 import { adminServiceRequestsRouter } from "./routes/admin.service-requests.js";
+import { servicesRouter } from "./routes/services.js";
+import { adminServicesRouter } from "./routes/admin.services.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -48,14 +50,21 @@ const authLimiter = rateLimit({
 app.get("/api/sitemap.xml", async (_req, res) => {
   try {
     const equipment = await prisma.equipment.findMany({ select: { slug: true, updatedAt: true } });
+    const services = await prisma.service.findMany({ where: { isActive: true }, select: { slug: true, updatedAt: true } });
     const base = process.env.SITE_URL || "https://technorent.ua";
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
     xml += `  <url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>\n`;
     xml += `  <url><loc>${base}/catalog</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>\n`;
-    xml += `  <url><loc>${base}/services</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>\n`;
-    xml += `  <url><loc>${base}/vyviz-smittia</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>\n`;
+    xml += `  <url><loc>${base}/services</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
+    xml += `  <url><loc>${base}/vyviz-smittia</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>\n`;
     xml += `  <url><loc>${base}/contacts</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>\n`;
+
+    // Service pages (dynamic from DB)
+    for (const svc of services) {
+      const lastmod = svc.updatedAt.toISOString().split("T")[0];
+      xml += `  <url><loc>${base}/services/${svc.slug}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>\n`;
+    }
 
     for (const eq of equipment) {
       const lastmod = eq.updatedAt.toISOString().split("T")[0];
@@ -83,6 +92,7 @@ const ordersLimiter = rateLimit({
 app.use("/api/equipment", equipmentRouter);
 app.use("/api/orders", ordersLimiter, ordersRouter);
 app.use("/api/service-requests", ordersLimiter, serviceRequestsRouter);
+app.use("/api/services", servicesRouter);
 app.use("/api/auth", authLimiter, authRouter);
 
 // ─── Admin API (protected) ────────────────────────
@@ -92,6 +102,7 @@ app.use("/api/admin/rent-orders", adminRentOrdersRouter);
 app.use("/api/admin/occupancy", adminOccupancyRouter);
 app.use("/api/admin/upload", adminUploadRouter);
 app.use("/api/admin/service-requests", adminServiceRequestsRouter);
+app.use("/api/admin/services", adminServicesRouter);
 
 import { existsSync } from "fs";
 

@@ -9,6 +9,7 @@ const navItems = [
   { to: "/admin/orders", label: "Заявки" },
   { to: "/admin/rent-orders", label: "Замовлення" },
   { to: "/admin/service-requests", label: "Послуги" },
+  { to: "/admin/services-manage", label: "Управління послугами" },
   { to: "/admin/occupancy", label: "Зайнятість" },
 ];
 

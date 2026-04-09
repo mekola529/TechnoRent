@@ -40,7 +40,10 @@ equipmentRouter.get("/", async (req, res) => {
     const { type, brand, popular, sort } = req.query;
 
     const where: Record<string, unknown> = {};
-    if (type && type !== "all") where.type = type;
+    if (type && type !== "all") {
+      const types = (type as string).split(",").map((t) => t.trim()).filter(Boolean);
+      where.type = types.length > 1 ? { in: types } : types[0];
+    }
     if (brand && brand !== "all") where.brand = brand;
     if (popular === "true") where.isPopular = true;
 

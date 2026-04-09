@@ -118,6 +118,18 @@ export async function getAvailableTypes(): Promise<EquipmentType[]> {
 
 // ─── Client-side helpers (не змінились) ───────────
 
+/** Отримати техніку за кількома типами (для сторінки послуги) */
+export async function getEquipmentByTypes(
+  types: EquipmentType[]
+): Promise<Equipment[]> {
+  if (types.length === 0) return [];
+  const apiTypes = types.map(unmapType).join(",");
+  const items = await apiFetch<ApiEquipment[]>(
+    `/equipment?type=${encodeURIComponent(apiTypes)}`
+  );
+  return items.map(mapEquipment);
+}
+
 /** Перевірити чи техніка доступна на дату */
 export function isAvailableOnDate(equipment: Equipment, date: string): boolean {
   const check = new Date(date).getTime();

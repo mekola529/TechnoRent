@@ -12,8 +12,10 @@ import AdminOrdersPage from "./pages/AdminOrdersPage";
 import AdminOccupancyPage from "./pages/AdminOccupancyPage";
 import AdminRentOrdersPage from "./pages/AdminRentOrdersPage";
 import AdminServiceRequestsPage from "./pages/AdminServiceRequestsPage";
+import AdminServicesPage from "./pages/AdminServicesPage";
 import AdminOverviewPage from "./pages/AdminOverviewPage";
 import ServicesPage from "./pages/ServicesPage";
+import ServiceDetailPage from "./pages/ServiceDetailPage";
 import DebrisRemovalPage from "./pages/DebrisRemovalPage";
 import ContactsPage from "./pages/ContactsPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -36,6 +38,7 @@ function App() {
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/catalog/:slug" element={<EquipmentDetailPage />} />
           <Route path="/services" element={<ServicesPage />} />
+          <Route path="/services/:slug" element={<ServiceDetailPage />} />
           <Route path="/vyviz-smittia" element={<DebrisRemovalPage />} />
           <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/admin" element={<AdminLoginPage />} />
@@ -54,6 +57,7 @@ function App() {
             <Route path="orders" element={<AdminOrdersPage />} />
             <Route path="rent-orders" element={<AdminRentOrdersPage />} />
             <Route path="service-requests" element={<AdminServiceRequestsPage />} />
+            <Route path="services-manage" element={<AdminServicesPage />} />
             <Route path="occupancy" element={<AdminOccupancyPage />} />
           </Route>
 

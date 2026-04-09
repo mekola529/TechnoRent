@@ -21,7 +21,7 @@ export default function Footer() {
             <Link to="/" className="hover:text-primary transition-colors">Головна</Link>
             <Link to="/catalog" className="hover:text-primary transition-colors">Техніка</Link>
             <Link to="/services" className="hover:text-primary transition-colors">Послуги</Link>
-            <Link to="/vyviz-smittia" className="hover:text-primary transition-colors">Вивіз сміття</Link>
+            <Link to="/services/vyviz-budivelnogo-smittia" className="hover:text-primary transition-colors">Вивіз сміття</Link>
             <Link to="/contacts" className="hover:text-primary transition-colors">Контакти</Link>
           </div>
         </nav>

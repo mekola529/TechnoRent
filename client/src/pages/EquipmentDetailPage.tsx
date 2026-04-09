@@ -10,6 +10,8 @@ import OrderModal from "../components/OrderModal";
 import Skeleton from "../components/Skeleton";
 import EquipmentCard from "../components/EquipmentCard";
 import { useRecentlyViewed } from "../hooks/useRecentlyViewed";
+import { getServicesByEquipmentType } from "../data/services";
+import type { Service } from "../data/services";
 
 /** Генерує масив днів місяця */
 function getMonthDays(year: number, month: number) {
@@ -31,6 +33,7 @@ export default function EquipmentDetailPage() {
   const [item, setItem] = useState<Equipment | undefined>();
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [relatedServices, setRelatedServices] = useState<Service[]>([]);
 
   useEffect(() => {
     if (!slug) return;
@@ -40,6 +43,11 @@ export default function EquipmentDetailPage() {
       setLoading(false);
     });
   }, [slug]);
+
+  useEffect(() => {
+    if (!item) return;
+    getServicesByEquipmentType(item.type).then(setRelatedServices);
+  }, [item]);
 
   const now = new Date();
   const [calYear, setCalYear] = useState(now.getFullYear());
@@ -265,6 +273,34 @@ export default function EquipmentDetailPage() {
           )}
         </div>
       </section>
+
+      {/* Related services */}
+      {relatedServices.length > 0 && (
+          <section className="px-[120px] pb-2 pt-4 max-xl:px-8 max-md:px-4">
+            <h2 className="mb-5 text-[26px] font-bold text-dark">
+              Види робіт, які може виконувати ця техніка
+            </h2>
+            <div className="grid grid-cols-3 gap-4 max-lg:grid-cols-2 max-md:grid-cols-1">
+              {relatedServices.map((s) => (
+                <div
+                  key={s.slug}
+                  className="flex flex-col gap-2 rounded-[14px] border border-border bg-white p-5 transition-shadow hover:shadow-md"
+                >
+                  <h3 className="text-[15px] font-bold text-dark">{s.title}</h3>
+                  <p className="line-clamp-2 text-[13px] leading-relaxed text-dark-text">
+                    {s.shortDescription}
+                  </p>
+                  <Link
+                    to={`/services/${s.slug}`}
+                    className="mt-auto inline-flex w-fit items-center rounded-full bg-primary px-4 py-2 text-xs font-bold text-dark transition-opacity hover:opacity-90"
+                  >
+                    Детальніше
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </section>
+      )}
 
       {/* Recently viewed */}
       {recentlyViewed.length > 0 && (

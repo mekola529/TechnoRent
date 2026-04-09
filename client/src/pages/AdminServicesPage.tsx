@@ -558,10 +558,9 @@ export default function AdminServicesPage() {
       <AdminPageHeader
         title="Послуги"
         subtitle={`${items.length} послуг`}
-        actions={
-          <AdminButton size="sm" onClick={startCreate}>+ Нова послуга</AdminButton>
-        }
-      />
+      >
+        <AdminButton size="sm" onClick={startCreate}>+ Нова послуга</AdminButton>
+      </AdminPageHeader>
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
         <table className="w-full text-left text-sm">

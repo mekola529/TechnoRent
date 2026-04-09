@@ -129,6 +129,9 @@ export default function AdminServicesPage() {
 
   const [openActionId, setOpenActionId] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const [reordering, setReordering] = useState(false);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [editingOrderValue, setEditingOrderValue] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const initialSnapshotRef = useRef(serializeForm(emptyForm));
@@ -173,6 +176,50 @@ export default function AdminServicesPage() {
   }
 
   useEffect(() => { loadItems(); }, []);
+
+  async function reorderService(id: string, newPosition: number) {
+    if (reordering) return;
+    setReordering(true);
+    try {
+      const updated = await apiFetch<ApiService[]>(`/admin/services/${id}/reorder`, {
+        method: "PUT",
+        body: JSON.stringify({ newPosition }),
+      });
+      setItems(updated);
+    } catch {
+      // fallback: reload
+      await loadItems();
+    } finally {
+      setReordering(false);
+      setEditingOrderId(null);
+    }
+  }
+
+  function moveUp(item: ApiService) {
+    const idx = items.findIndex((i) => i.id === item.id);
+    if (idx <= 0) return;
+    reorderService(item.id, items[idx - 1].sortOrder);
+  }
+
+  function moveDown(item: ApiService) {
+    const idx = items.findIndex((i) => i.id === item.id);
+    if (idx < 0 || idx >= items.length - 1) return;
+    reorderService(item.id, items[idx + 1].sortOrder);
+  }
+
+  function startEditOrder(item: ApiService) {
+    setEditingOrderId(item.id);
+    setEditingOrderValue(String(item.sortOrder));
+  }
+
+  function commitEditOrder(item: ApiService) {
+    const newPos = parseInt(editingOrderValue, 10);
+    if (!isNaN(newPos) && newPos >= 1 && newPos !== item.sortOrder) {
+      reorderService(item.id, Math.min(newPos, items.length));
+    } else {
+      setEditingOrderId(null);
+    }
+  }
 
   function setInitialSnapshot(nextForm: FormState) {
     initialSnapshotRef.current = serializeForm(nextForm);
@@ -317,7 +364,7 @@ export default function AdminServicesPage() {
       seoTitle: form.seoTitle.trim(),
       seoDescription: form.seoDescription.trim(),
       isActive: form.isActive,
-      sortOrder: Number(form.sortOrder) || 0,
+      sortOrder: editingItem?.id ? editingItem.sortOrder : items.length + 1,
     };
 
     try {
@@ -418,9 +465,6 @@ export default function AdminServicesPage() {
                         <option key={val} value={val}>{label}</option>
                       ))}
                     </AdminSelect>
-                  </div>
-                  <div>
-                    <AdminInput label="Порядок" type="number" value={form.sortOrder} onChange={(e) => setForm((p) => ({ ...p, sortOrder: e.target.value }))} placeholder="0" />
                   </div>
                   <div>
                     <AdminSelect label="Статус" value={form.isActive ? "active" : "inactive"} onChange={(e) => setForm((p) => ({ ...p, isActive: e.target.value === "active" }))}>
@@ -617,7 +661,52 @@ export default function AdminServicesPage() {
                   <td className="px-4 py-2.5">
                     <StatusBadge status={item.isActive ? "active" : "inactive"} />
                   </td>
-                  <td className="px-4 py-2.5 text-xs text-gray-500">{item.sortOrder}</td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-1">
+                      <div className="flex flex-col">
+                        <button
+                          type="button"
+                          disabled={reordering || items.indexOf(item) === 0}
+                          onClick={() => moveUp(item)}
+                          className="flex h-4 w-5 items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:hover:bg-transparent"
+                          title="Вгору"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-3 w-3"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={reordering || items.indexOf(item) === items.length - 1}
+                          onClick={() => moveDown(item)}
+                          className="flex h-4 w-5 items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:hover:bg-transparent"
+                          title="Вниз"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-3 w-3"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                        </button>
+                      </div>
+                      {editingOrderId === item.id ? (
+                        <input
+                          autoFocus
+                          type="number"
+                          min={1}
+                          max={items.length}
+                          className="w-10 rounded border border-blue-300 bg-white px-1 py-0.5 text-center text-xs text-gray-900 outline-none"
+                          value={editingOrderValue}
+                          onChange={(e) => setEditingOrderValue(e.target.value)}
+                          onBlur={() => commitEditOrder(item)}
+                          onKeyDown={(e) => { if (e.key === "Enter") commitEditOrder(item); if (e.key === "Escape") setEditingOrderId(null); }}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => startEditOrder(item)}
+                          className="min-w-[24px] rounded px-1 py-0.5 text-center text-xs font-medium text-gray-600 hover:bg-gray-100"
+                          title="Натисніть, щоб змінити позицію"
+                        >
+                          {item.sortOrder}
+                        </button>
+                      )}
+                    </div>
+                  </td>
                   <td className="relative px-2 py-2.5">
                     <button
                       onClick={(e) => { e.stopPropagation(); openMenu(item.id, e.currentTarget); }}

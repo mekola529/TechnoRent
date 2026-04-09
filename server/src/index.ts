@@ -1,6 +1,7 @@
 import { config } from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import { execSync } from "child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -117,7 +118,15 @@ if (process.env.NODE_ENV === "production") {
   }
 }
 
-// ─── Start ────────────────────────────────────────
+// ─── Sync DB schema & Start ──────────────────────
+try {
+  console.log("Running prisma db push...");
+  execSync("npx prisma db push --skip-generate", { stdio: "inherit" });
+  console.log("DB schema synced.");
+} catch (e) {
+  console.error("prisma db push failed:", e);
+}
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

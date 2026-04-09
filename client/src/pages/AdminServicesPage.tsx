@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { apiFetch } from "../api/client";
 import { AdminTableRowsSkeleton } from "../components/Skeleton";
 import {
@@ -127,6 +128,8 @@ export default function AdminServicesPage() {
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
 
   const [openActionId, setOpenActionId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const initialSnapshotRef = useRef(serializeForm(emptyForm));
 
@@ -140,12 +143,22 @@ export default function AdminServicesPage() {
   }, [form.title, slugTouched, formOpen]);
 
   // Close action menu on outside click
+  const closeMenu = useCallback(() => { setOpenActionId(null); setMenuPos(null); }, []);
   useEffect(() => {
     if (!openActionId) return;
-    const handler = () => setOpenActionId(null);
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
-  }, [openActionId]);
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) closeMenu();
+    };
+    document.addEventListener("mousedown", handler, true);
+    return () => document.removeEventListener("mousedown", handler, true);
+  }, [openActionId, closeMenu]);
+
+  function openMenu(id: string, btnEl: HTMLButtonElement) {
+    if (openActionId === id) { closeMenu(); return; }
+    const rect = btnEl.getBoundingClientRect();
+    setMenuPos({ top: rect.bottom + 4, left: rect.right - 144 });
+    setOpenActionId(id);
+  }
 
   async function loadItems() {
     setLoading(true);
@@ -607,23 +620,13 @@ export default function AdminServicesPage() {
                   <td className="px-4 py-2.5 text-xs text-gray-500">{item.sortOrder}</td>
                   <td className="relative px-2 py-2.5">
                     <button
-                      onClick={(e) => { e.stopPropagation(); setOpenActionId(openActionId === item.id ? null : item.id); }}
+                      onClick={(e) => { e.stopPropagation(); openMenu(item.id, e.currentTarget); }}
                       className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
                       </svg>
                     </button>
-                    {openActionId === item.id && (
-                      <div className="absolute right-0 top-full z-20 mt-1 w-36 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                        <button onClick={() => startEdit(item)} className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50">
-                          Редагувати
-                        </button>
-                        <button onClick={() => { setDeleteTarget({ id: item.id, name: item.title }); setOpenActionId(null); }} className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50">
-                          Видалити
-                        </button>
-                      </div>
-                    )}
                   </td>
                 </tr>
               ))
@@ -631,6 +634,29 @@ export default function AdminServicesPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Action dropdown menu (portal to avoid overflow clipping) */}
+      {openActionId && menuPos && createPortal(
+        <div
+          ref={menuRef}
+          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, zIndex: 9999 }}
+          className="w-36 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+        >
+          <button
+            onClick={() => { const item = items.find((i) => i.id === openActionId); if (item) startEdit(item); }}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
+          >
+            Редагувати
+          </button>
+          <button
+            onClick={() => { const item = items.find((i) => i.id === openActionId); if (item) { setDeleteTarget({ id: item.id, name: item.title }); closeMenu(); } }}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50"
+          >
+            Видалити
+          </button>
+        </div>,
+        document.body
+      )}
 
       {/* Delete modal */}
       {deleteTarget && (

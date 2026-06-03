@@ -1,40 +1,71 @@
 # TechnoRent
 
-TechnoRent is a rental and service CRM for construction equipment. The project includes a public website, customer cabinet, admin CRM, order finance, Monobank payments, GPS tracking, notifications, and service request management.
+Платформа для оренди спецтехніки, обробки заявок і керування роботою сервісної компанії. Проєкт поєднує публічний сайт, кабінет клієнта, CRM для менеджерів, фінансовий модуль, оплату через Monobank, GPS-контроль і Telegram-сповіщення.
 
-## Stack
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
-- Frontend: React 19, Vite, TypeScript, Tailwind CSS
-- Backend: Node.js, Express, TypeScript
-- Database: PostgreSQL through `pg` and raw SQL runtime schema setup
-- Integrations: Monobank acquiring, Telegram notifications, EquGPS/Traccar-compatible GPS source
+## Що вміє система
 
-## Project Structure
+- Публічний каталог техніки та послуг.
+- Оформлення заявок на оренду техніки, евакуатор, вивіз сміття та інші послуги.
+- Кабінет клієнта з історією заявок, статусами, погодженою вартістю і станом розрахунку.
+- Прив’язка заявок до клієнта після реєстрації, навіть якщо заявку створили до акаунта.
+- Адмінка для заявок, замовлень, техніки, послуг, працівників, клієнтів, фінансів, GPS, маркетингу та сповіщень.
+- Фінансовий модуль із погодженою вартістю, оплатами, боргом, витратами і розрахунками з працівниками.
+- Генерація платіжних посилань Monobank і синхронізація оплат через webhook.
+- GPS-контроль техніки через EquGPS/Traccar-сумісне джерело.
+- Telegram-сповіщення для менеджерів і працівників.
+- SEO-метадані, sitemap, robots.txt і базова аналітика.
+
+## Технології
+
+| Частина | Технології |
+| --- | --- |
+| Frontend | React 19, Vite, TypeScript, Tailwind CSS |
+| Backend | Node.js, Express, TypeScript |
+| База даних | PostgreSQL, `pg`, runtime SQL schema setup |
+| Авторизація | JWT для адмінки, cookie/session для клієнтського кабінету |
+| Оплати | Monobank acquiring |
+| Карти та GPS | Leaflet, EquGPS/Traccar-compatible API |
+| Сповіщення | Telegram bot/internal API, email/Viber placeholders |
+
+## Структура проєкту
 
 ```text
-client/          React public site, customer cabinet, admin UI
-server/          Express API, PostgreSQL schema setup, integrations
-docs/            Technical documentation and deploy notes
-scripts/         Local helper scripts for ngrok/Monobank/Telegram
-uploads/         Runtime uploads, not committed
-client_dist/     Production frontend build copy, not committed
+TechnoRent/
+├── client/          React сайт, кабінет клієнта, адмінка
+├── server/          Express API, PostgreSQL схема, інтеграції
+├── docs/            Технічна документація, плани, деплойні інструкції
+├── scripts/         Локальні helper-скрипти для ngrok, Monobank, Telegram
+├── uploads/         Runtime-завантаження, не комітяться
+└── client_dist/     Production-копія frontend build, не комітиться
 ```
 
-## Local Setup
+## Локальний запуск
 
-Install dependencies:
+Вимоги:
+
+- Node.js 20+
+- npm
+- PostgreSQL
+
+Встановити залежності:
 
 ```bash
 npm install
 ```
 
-Create local environment:
+Створити `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-Minimum local variables:
+Мінімальні локальні змінні:
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/technorent"
@@ -46,60 +77,68 @@ CLIENT_URL="http://localhost:5173"
 SITE_URL="http://localhost:5173"
 ```
 
-Run the full local project:
+Запустити frontend і backend разом:
 
 ```bash
 npm run dev
 ```
 
-Default local URLs:
+Локальні адреси:
 
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:3001/api`
+- сайт: `http://localhost:5173`
+- API: `http://localhost:3001/api`
 
-## Build
+Backend при старті ініціалізує потрібну PostgreSQL-схему і запускає auto-seed для базових даних.
 
-Run a full production build:
+## Production build
+
+Повна збірка:
 
 ```bash
 npm run build
 ```
 
-This builds:
+Команда збирає:
 
 - `server/dist`
 - `client/dist`
-- `client_dist` copy used for cPanel-style deploy archives
+- `client_dist`, копію frontend build для cPanel-style деплою
 
-## Deployment Notes
+## Деплой
 
-The deploy archive is created manually when needed. It should include production build output and server runtime dependencies, but should not include:
+Деплойний ZIP збирається вручну тільки коли потрібен реліз. У deploy-архів входять production build output, server runtime dependencies, документація та `.env.example`.
+
+У deploy-архів не повинні потрапляти:
 
 - `.env`
-- Docker files
+- Docker-файли
 - `telegram-bot/`
-- local logs
-- local ZIP artifacts
+- локальні логи
+- локальні ZIP-артефакти
+- `client_dist/` у Git
+- `server/dist/` у Git
+- `server/generated/`
+- `uploads/`
 
-Telegram bot deployment is handled separately when required.
+Telegram bot пакується і деплоїться окремо за потреби.
 
-Before deploying, check:
+Перед деплоєм завжди перевірити:
 
 ```bash
 npm run build
 ```
 
-Then review:
+Актуальні інструкції:
 
-- `docs/DEPLOY_PRODUCTION_CPANEL.md`
-- `docs/CPANEL_DEPLOY.md`
-- `docs/README.md`
+- [docs/DEPLOY_PRODUCTION_CPANEL.md](docs/DEPLOY_PRODUCTION_CPANEL.md)
+- [docs/CPANEL_DEPLOY.md](docs/CPANEL_DEPLOY.md)
+- [docs/README.md](docs/README.md)
 
-## Important Environment Rules
+## Правила для env
 
-Do not add `VITE_` to secret variables. Every `VITE_*` value is bundled into the frontend and becomes public.
+Не додавайте `VITE_` до секретних змінних. Усе, що починається з `VITE_`, потрапляє у frontend bundle і стає публічним.
 
-Keep these backend-only:
+Тільки backend:
 
 - `DATABASE_URL`
 - `JWT_SECRET`
@@ -111,7 +150,7 @@ Keep these backend-only:
 - `EQUGPS_EMAIL`
 - `EQUGPS_PASSWORD`
 
-Allowed public frontend variables:
+Дозволені публічні frontend-змінні:
 
 ```env
 VITE_API_URL="https://your-domain.example/api"
@@ -119,23 +158,39 @@ VITE_SITE_URL="https://your-domain.example"
 VITE_GTM_ID="GTM-XXXXXXX"
 ```
 
-## Documentation
+## Документація
 
-Start with:
+Для швидкого входу в контекст:
 
-- `docs/README.md`
-- `docs/TECHNICAL_OVERVIEW.md`
-- `docs/PROJECT_CONTEXT.md`
-- `docs/API_REFERENCE.md`
-- `docs/DEPLOY_PRODUCTION_CPANEL.md`
+1. [docs/README.md](docs/README.md)
+2. [docs/TECHNICAL_OVERVIEW.md](docs/TECHNICAL_OVERVIEW.md)
+3. [docs/PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md)
+4. [docs/API_REFERENCE.md](docs/API_REFERENCE.md)
+5. [docs/DEPLOY_PRODUCTION_CPANEL.md](docs/DEPLOY_PRODUCTION_CPANEL.md)
 
-## Current Main Features
+## Корисні команди
 
-- Public catalog of equipment and services
-- Equipment/service order forms
-- Customer account and request/order cabinet
-- Monobank payment links and webhook sync
-- Admin CRM for requests, rent orders, finance, employees, customers, notifications, GPS, settings
-- Worker assignment and optional customer-visible worker contact
-- PostgreSQL schema initialization on backend startup
-- Dynamic sitemap and SEO metadata
+```bash
+npm run dev           # локальний frontend + backend
+npm run build         # production build
+npm run build:server  # тільки backend
+npm run build:client  # тільки frontend
+npm start             # запуск server/dist
+```
+
+Допоміжні локальні скрипти:
+
+```bash
+node scripts/start-local-monobank-ngrok.mjs
+node scripts/start-local-telegram-ngrok.mjs --local
+```
+
+## Поточний статус
+
+Проєкт активно розробляється. Частина доменів, контактів і тестових інтеграцій може бути тимчасовою до фінального production запуску.
+
+Основний репозиторій:
+
+```text
+https://github.com/mekola529/TechnoRent
+```

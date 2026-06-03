@@ -8,7 +8,7 @@ export default function NotFoundPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans">
       <Helmet>
-        <title>Сторінку не знайдено — TechnoRent</title>
+        <title>Сторінку не знайдено | TechnoRent</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 

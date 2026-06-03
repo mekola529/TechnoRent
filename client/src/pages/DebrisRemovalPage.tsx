@@ -5,6 +5,10 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileTabBar from "../components/MobileTabBar";
 import { apiFetch } from "../api/client";
+import AddressAutocompleteInput from "../components/AddressAutocompleteInput";
+import { getLeadAttributionPayload } from "../lib/attribution";
+import { pushAnalyticsEvent } from "../lib/analytics";
+import { absoluteSiteUrl } from "../utils/seo";
 
 /* ── Structured data ── */
 
@@ -13,31 +17,31 @@ const serviceJsonLd = {
   "@type": "Service",
   name: "Вивіз будівельного сміття",
   description:
-    "Оперативний вивіз будівельного сміття у Львові та Львівській області — бетон, цегла, ґрунт, демонтажні відходи.",
+    "Вивіз будівельного сміття у Львові та області: бетон, цегла, ґрунт і відходи після демонтажу.",
   provider: {
     "@type": "LocalBusiness",
     name: "TechnoRent",
-    url: "https://technorent.ua",
+    url: absoluteSiteUrl("/"),
   },
   areaServed: {
     "@type": "Place",
     name: "Львів та Львівська область",
   },
-  url: "https://technorent.ua/vyviz-smittia",
+  url: absoluteSiteUrl("/services/vyviz-budivelnogo-smittia"),
 };
 
 const faqItems = [
   {
     q: "Скільки коштує вивіз будівельного сміття?",
-    a: "Вартість залежить від обсягу та типу відходів. Залиште заявку — менеджер розрахує точну вартість після уточнення деталей.",
+    a: "Вартість залежить від обсягу, виду відходів, техніки та адреси. У заявці опишіть сміття, щоб менеджер підготував розрахунок.",
   },
   {
     q: "Як швидко ви можете вивезти сміття?",
-    a: "Зазвичай ми організовуємо вивіз протягом 1–2 днів після підтвердження заявки. У термінових випадках — в день звернення.",
+    a: "Менеджер уточнить доступність техніки та запропонує можливий час вивозу після отримання заявки.",
   },
   {
     q: "В яких районах ви працюєте?",
-    a: "Ми обслуговуємо Львів та всю Львівську область у радіусі до 100 км.",
+    a: "Працюємо у Львові та Львівській області. Можливість виїзду за конкретною адресою підтвердить менеджер.",
   },
   {
     q: "Які матеріали ви вивозите?",
@@ -45,7 +49,7 @@ const faqItems = [
   },
   {
     q: "Чи потрібно мені самостійно пакувати сміття?",
-    a: "Ні, наша бригада виконає завантаження. Але якщо сміття вже зібране у мішки — це пришвидшить процес.",
+    a: "Повідомте, чи відходи зібрані й чи потрібне завантаження технікою. Так ми підберемо відповідний формат роботи.",
   },
 ];
 
@@ -72,15 +76,15 @@ const wasteTypes = [
 ];
 
 const steps = [
-  { num: "01", title: "Залишаєте заявку", desc: "Заповніть форму — вкажіть адресу, дату та бажаний час вивозу. Це займе лише хвилину." },
+  { num: "01", title: "Залишаєте заявку", desc: "У формі вкажіть адресу, бажану дату та що потрібно вивезти." },
   { num: "02", title: "Уточнюємо деталі", desc: "Менеджер зв'яжеться з вами, уточнить обсяг сміття та адресу забору." },
-  { num: "03", title: "Погоджуємо час", desc: "Підтверджуємо зручну для вас дату та часовий інтервал вивозу." },
-  { num: "04", title: "Вивозимо сміття", desc: "Приїжджаємо на вказану адресу, завантажуємо і вивозимо все будівельне сміття." },
+  { num: "03", title: "Погоджуємо подачу", desc: "Підтверджуємо дату та часовий інтервал, коли техніка може приїхати." },
+  { num: "04", title: "Виконуємо вивіз", desc: "Приїжджаємо на адресу та вивозимо погоджений обсяг будівельних відходів." },
 ];
 
 const advantages = [
-  { icon: "⚡", title: "Оперативне погодження", desc: "Зв'яжемося з вами протягом 30 хвилин після заявки" },
-  { icon: "📅", title: "Зручний вибір дати і часу", desc: "Ви обираєте коли — ми організовуємо вивіз" },
+  { icon: "⚡", title: "Зрозуміле погодження", desc: "Уточнюємо обсяг, техніку та вартість перед виїздом" },
+  { icon: "📅", title: "Погоджена дата", desc: "Ви зазначаєте бажаний час, а менеджер перевіряє доступність техніки" },
   { icon: "📍", title: "Виїзд на вказану адресу", desc: "Працюємо по Львову та Львівській області" },
   { icon: "🏢", title: "Приватні та комерційні об'єкти", desc: "Обслуговуємо квартири, будинки, офіси та промислові об'єкти" },
 ];
@@ -144,7 +148,8 @@ export default function DebrisRemovalPage() {
     setSubmitError("");
 
     try {
-      await apiFetch("/service-requests", {
+      const attribution = getLeadAttributionPayload();
+      const created = await apiFetch<{ id: string }>("/service-requests", {
         method: "POST",
         body: JSON.stringify({
           serviceType: "debris_removal",
@@ -154,7 +159,17 @@ export default function DebrisRemovalPage() {
           date: form.date,
           time: form.time,
           comment: form.comment.trim() || undefined,
+          attribution,
         }),
+      });
+      pushAnalyticsEvent("lead_submit_success", {
+        lead_type: "service_request",
+        request_id: created.id,
+        page_path: window.location.pathname,
+        utm_source: attribution.lastTouch?.utmSource,
+        utm_medium: attribution.lastTouch?.utmMedium,
+        utm_campaign: attribution.lastTouch?.utmCampaign,
+        tracking_code: attribution.lastTouch?.trackingCode,
       });
       setSubmitted(true);
       setForm({ name: "", phone: "+380", address: "", date: "", time: "", comment: "" });
@@ -168,18 +183,35 @@ export default function DebrisRemovalPage() {
   function openModal() {
     setSubmitted(false);
     setSubmitError("");
+    pushAnalyticsEvent("form_open", {
+      form_type: "service_request",
+      page_path: window.location.pathname,
+      service_slug: "debris_removal",
+    });
     setShowModal(true);
   }
 
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans">
       <Helmet>
-        <title>Вивіз будівельного сміття — TechnoRent | Львів та область</title>
+        <title>Вивіз будівельного сміття | TechnoRent | Львів та область</title>
         <meta
           name="description"
-          content="Замовте вивіз будівельного сміття у Львові та Львівській області. Швидке погодження, зручний вибір дати та часу, виїзд на адресу."
+          content="Вивіз будівельного сміття у Львові та області: погодження обсягу, підбір техніки, завантаження і вивезення з об'єкта."
         />
-        <link rel="canonical" href="https://technorent.ua/vyviz-smittia" />
+        <link rel="canonical" href={absoluteSiteUrl("/services/vyviz-budivelnogo-smittia")} />
+        <meta property="og:title" content="Вивіз будівельного сміття | TechnoRent" />
+        <meta
+          property="og:description"
+          content="Вивіз будівельного сміття у Львові та області: погодження обсягу, підбір техніки, завантаження і вивезення з об'єкта."
+        />
+        <meta property="og:url" content={absoluteSiteUrl("/services/vyviz-budivelnogo-smittia")} />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Вивіз будівельного сміття | TechnoRent" />
+        <meta
+          name="twitter:description"
+          content="Вивіз будівельного сміття у Львові та області: погодження обсягу, підбір техніки, завантаження і вивезення з об'єкта."
+        />
         <script type="application/ld+json">{JSON.stringify(serviceJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </Helmet>
@@ -191,7 +223,7 @@ export default function DebrisRemovalPage() {
       <section className="relative flex min-h-[420px] w-full items-center overflow-hidden">
         <img
           src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920"
-          alt="Вивіз будівельного сміття — TechnoRent"
+          alt="Вивіз будівельного сміття у Львові"
           className="absolute inset-0 h-full w-full object-cover"
           loading="eager"
           width={1920}
@@ -205,7 +237,7 @@ export default function DebrisRemovalPage() {
             Вивіз будівельного <span className="text-primary">сміття</span>
           </h1>
           <p className="max-w-[540px] text-lg font-medium text-gray-100 max-md:text-base">
-            Швидко організуємо вивіз сміття після ремонту, демонтажу або будівельних робіт.
+            Вивозимо сміття після ремонту, демонтажу та будівельних робіт.
             Працюємо по Львову та Львівській області.
           </p>
           <button
@@ -224,10 +256,9 @@ export default function DebrisRemovalPage() {
             Про послугу
           </h2>
           <p className="text-center text-[15px] leading-relaxed text-dark-text">
-            Після ремонту, демонтажу чи будівництва завжди залишається сміття, яке потрібно вивезти
-            швидко та без зайвих клопотів. Ми беремо це на себе — ви лише залишаєте заявку,
-            а ми організовуємо вивіз у зручний для вас час. Послуга підходить як для приватних
-            осіб після ремонту квартири, так і для будівельних компаній з великими обсягами відходів.
+            Після ремонту чи демонтажу на об'єкті залишаються цегла, бетон, ґрунт та інші відходи.
+            У заявці вкажіть адресу й приблизний обсяг. Менеджер з'ясує, чи потрібне
+            завантаження технікою, і погодить час вивозу.
           </p>
         </div>
       </section>
@@ -339,7 +370,7 @@ export default function DebrisRemovalPage() {
             Залишилось сміття після ремонту?
           </h2>
           <p className="mt-2 text-sm font-medium text-gray-300">
-            Ми швидко організуємо вивіз — залиште заявку і ми зв'яжемося з вами
+            Залиште заявку, щоб погодити обсяг, техніку та можливий час вивозу
           </p>
           <button
             onClick={openModal}
@@ -385,7 +416,7 @@ export default function DebrisRemovalPage() {
               <>
                 <h2 className="mb-1 text-[22px] font-bold text-dark">Залишити заявку</h2>
                 <p className="mb-5 text-sm font-medium text-dark-text">
-                  Заповніть форму — ми зв'яжемося з вами для підтвердження
+                  Заповніть форму. Менеджер зв'яжеться з вами для підтвердження.
                 </p>
 
                 <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
@@ -415,12 +446,12 @@ export default function DebrisRemovalPage() {
                   </FormField>
 
                   <FormField label="Адреса вивозу" required error={errors.address}>
-                    <input
-                      type="text"
+                    <AddressAutocompleteInput
                       placeholder="Місто, вулиця, будинок"
                       value={form.address}
-                      onChange={(e) => update("address", e.target.value)}
-                      className={inputClass(errors.address)}
+                      onChange={(value) => update("address", value)}
+                      inputClassName={inputClass(errors.address)}
+                      error={Boolean(errors.address)}
                     />
                   </FormField>
 
@@ -441,7 +472,7 @@ export default function DebrisRemovalPage() {
                         onChange={(e) => update("time", e.target.value)}
                         className={inputClass(errors.time)}
                       >
-                        <option value="">— Оберіть час —</option>
+                        <option value="">Оберіть час</option>
                         {timeSlots.map((t) => (
                           <option key={t} value={t}>{t}</option>
                         ))}
@@ -451,7 +482,7 @@ export default function DebrisRemovalPage() {
 
                   <FormField label="Коментар (необов'язково)">
                     <textarea
-                      placeholder="Опишіть обсяг, тип сміття або інші деталі…"
+                      placeholder="Наприклад: мішки після ремонту, бетон або ґрунт"
                       value={form.comment}
                       onChange={(e) => update("comment", e.target.value)}
                       rows={3}
@@ -470,7 +501,7 @@ export default function DebrisRemovalPage() {
                     disabled={sending}
                     className="w-full rounded-full bg-primary py-3.5 text-sm font-bold text-dark transition-opacity hover:opacity-90 disabled:opacity-60"
                   >
-                    {sending ? "Надсилання…" : "Замовити вивіз"}
+                    {sending ? "Надсилання..." : "Замовити вивіз"}
                   </button>
                 </form>
               </>

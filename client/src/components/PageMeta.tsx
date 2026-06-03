@@ -4,6 +4,7 @@ interface PageMetaProps {
   title: string;
   description: string;
   canonical?: string;
+  image?: string;
   ogType?: string;
   noindex?: boolean;
 }
@@ -12,6 +13,7 @@ export default function PageMeta({
   title,
   description,
   canonical,
+  image,
   ogType = "website",
   noindex = false,
 }: PageMetaProps) {
@@ -29,10 +31,13 @@ export default function PageMeta({
       <meta property="og:description" content={description} />
       <meta property="og:type" content={ogType} />
       {canonical && <meta property="og:url" content={canonical} />}
+      {image && <meta property="og:image" content={image} />}
 
       {/* Twitter */}
+      <meta name="twitter:card" content={image ? "summary_large_image" : "summary"} />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
+      {image && <meta name="twitter:image" content={image} />}
     </Helmet>
   );
 }

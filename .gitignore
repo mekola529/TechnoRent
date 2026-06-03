@@ -30,11 +30,24 @@ dist-ssr
 
 # Prisma
 server/dist-seed
+server/generated
 
 # Build output
 server/dist
 client/dist
+client_dist
+deploy_artifacts
+server/dist.zip
 
 # Uploads
 uploads
 .playwright-mcp/
+
+# Local app helpers and runtime logs
+Icon*
+Start TechnoRent Telegram Bot.command
+server.log
+telegram-bot.log
+
+# Telegram bot is packaged/deployed separately when needed
+telegram-bot/

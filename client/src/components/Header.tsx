@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { useOrderModal } from "../context/OrderModalContext";
+import { useOrderModal } from "../context/useOrderModal";
+import { trackPhoneClick } from "../lib/analytics";
 
 export default function Header() {
   const { openOrderModal } = useOrderModal();
@@ -26,12 +27,16 @@ export default function Header() {
           <Link to="/contacts" className="text-sm font-semibold text-dark-text hover:text-primary transition-colors">
             Контакти
           </Link>
+          <Link to="/account" className="text-sm font-semibold text-dark-text hover:text-primary transition-colors">
+            Кабінет
+          </Link>
         </nav>
 
         {/* Right side */}
         <div className="flex items-center gap-3.5">
           <a
             href="tel:+380670000000"
+            onClick={() => trackPhoneClick({ placement: "header" })}
             className="hidden text-sm font-semibold text-dark lg:block"
             aria-label="Зателефонувати +380 67 000 00 00"
           >
@@ -39,7 +44,7 @@ export default function Header() {
           </a>
           <button
             onClick={() => openOrderModal()}
-            className="rounded-full bg-primary px-5 py-3 text-[13px] font-bold text-dark transition-opacity hover:opacity-90"
+            className="rounded-full bg-primary px-5 py-3 text-[13px] font-bold text-dark transition-opacity hover:opacity-90 max-sm:px-3 max-sm:py-2.5 max-sm:text-xs"
           >
             Замовити техніку
           </button>

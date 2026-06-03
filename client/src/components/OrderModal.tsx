@@ -1,15 +1,22 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { createOrder } from "../data/equipment.service";
+import AddressAutocompleteInput from "./AddressAutocompleteInput";
+import { getLeadAttributionPayload } from "../lib/attribution";
+import { pushAnalyticsEvent } from "../lib/analytics";
+import { useCustomerAccount } from "../context/useCustomerAccount";
+import { getCustomerContactPrefill, shouldPrefillPhone } from "../utils/customerPrefill";
 
 interface OrderModalProps {
   equipmentName?: string;
   equipmentId?: string;
+  serviceName?: string;
   onClose: () => void;
 }
 
-export default function OrderModal({ equipmentName, equipmentId, onClose }: OrderModalProps) {
+export default function OrderModal({ equipmentName, equipmentId, serviceName, onClose }: OrderModalProps) {
   const isDetailed = !!equipmentId;
+  const { customer } = useCustomerAccount();
 
   const [form, setForm] = useState({
     name: "",
@@ -28,6 +35,18 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
 
   const update = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
+
+  useEffect(() => {
+    if (!customer) return;
+
+    const prefill = getCustomerContactPrefill(customer);
+    setForm((prev) => ({
+      ...prev,
+      name: prev.name.trim() ? prev.name : prefill.name,
+      phone: shouldPrefillPhone(prev.phone) ? prefill.phone : prev.phone,
+      email: prev.email.trim() ? prev.email : prefill.email,
+    }));
+  }, [customer]);
 
   /* ── Body scroll lock (Safari-compatible) ── */
   useEffect(() => {
@@ -50,6 +69,15 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
     };
   }, []);
 
+  useEffect(() => {
+    pushAnalyticsEvent("form_open", {
+      form_type: serviceName && !equipmentId ? "service_request" : "equipment_order",
+      page_path: window.location.pathname,
+      equipment_id: equipmentId ?? undefined,
+      service_name: serviceName ?? undefined,
+    });
+  }, [equipmentId, serviceName]);
+
   const handleSubmit = async () => {
     setTouched(true);
     if (!form.name.trim() || form.phone.length < 10) return;
@@ -57,7 +85,8 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
     setError("");
 
     try {
-      await createOrder({
+      const attribution = getLeadAttributionPayload();
+      const created = await createOrder({
         customerName: form.name,
         phone: form.phone,
         email: form.email || undefined,
@@ -65,7 +94,19 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
         dateTo: form.dateTo || undefined,
         address: form.address || undefined,
         comment: form.comment || undefined,
+        requestType: serviceName && !equipmentId ? "service" : "equipment_rental",
+        serviceName: serviceName && !equipmentId ? serviceName : undefined,
+        attribution,
         ...(equipmentId ? { equipmentId } : {}),
+      });
+      pushAnalyticsEvent("lead_submit_success", {
+        lead_type: serviceName && !equipmentId ? "service_request" : "equipment_order",
+        request_id: created.id,
+        page_path: window.location.pathname,
+        utm_source: attribution.lastTouch?.utmSource,
+        utm_medium: attribution.lastTouch?.utmMedium,
+        utm_campaign: attribution.lastTouch?.utmCampaign,
+        tracking_code: attribution.lastTouch?.trackingCode,
       });
       setSubmitted(true);
     } catch (e) {
@@ -90,7 +131,7 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
             <span className="text-5xl">✅</span>
             <h2 className="text-2xl font-bold text-dark">Заявку надіслано!</h2>
             <p className="text-center text-sm font-medium text-dark-text">
-              Ми зв'яжемося з вами найближчим часом для підтвердження замовлення.
+              Менеджер зв'яжеться з вами, щоб уточнити деталі та підтвердити замовлення.
             </p>
             <button
               onClick={onClose}
@@ -103,7 +144,7 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
           <>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-[28px] font-bold text-dark">
-                {isDetailed ? "Замовлення техніки" : "Залишити заявку"}
+                {isDetailed ? "Заявка на техніку" : "Залишити заявку"}
               </h2>
               <button
                 onClick={onClose}
@@ -118,6 +159,15 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
                 <span className="text-xs font-bold text-dark-text">Техніка</span>
                 <span className="text-sm font-semibold text-dark">
                   {equipmentName}
+                </span>
+              </div>
+            )}
+
+            {serviceName && !equipmentName && (
+              <div className="mb-4 flex flex-col gap-1.5 rounded-[10px] bg-light-bg p-3">
+                <span className="text-xs font-bold text-dark-text">Послуга</span>
+                <span className="text-sm font-semibold text-dark">
+                  {serviceName}
                 </span>
               </div>
             )}
@@ -147,14 +197,18 @@ export default function OrderModal({ equipmentName, equipmentId, onClose }: Orde
                   </div>
 
                   <Field label="Адреса (необов'язково)">
-                    <Input placeholder="Львів, вул..." value={form.address} onChange={(v) => update("address", v)} />
+                    <AddressAutocompleteInput
+                      placeholder="Львів, вул..."
+                      value={form.address}
+                      onChange={(v) => update("address", v)}
+                    />
                   </Field>
                 </>
               )}
 
               <Field label="Коментар (необов'язково)">
                 <textarea
-                  placeholder="Деталі замовлення..."
+                  placeholder="Наприклад: вид робіт, адреса або умови під'їзду"
                   value={form.comment}
                   onChange={(e) => update("comment", e.target.value)}
                   className="h-[90px] w-full max-w-full resize-none rounded-[10px] border border-border bg-white px-3.5 py-3 text-base font-medium text-dark outline-none placeholder:text-[#8A8A8A] focus:border-primary md:text-[13px]"

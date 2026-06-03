@@ -18,6 +18,19 @@ interface EquipmentRef { id: string; name: string; slug: string }
 interface OrderRef { id: string; customerName: string; status: string }
 interface RentOrderRef { id: string; customerName: string; customerPhone: string; status: string }
 
+interface OccupancyConflict {
+  equipmentId: string;
+  equipmentName: string | null;
+  firstPeriodId: string;
+  secondPeriodId: string;
+  firstOrderNumber: string | null;
+  secondOrderNumber: string | null;
+  firstCustomerName: string | null;
+  secondCustomerName: string | null;
+  overlapFrom: string;
+  overlapTo: string;
+}
+
 interface BookedPeriod {
   id: string;
   from: string;
@@ -65,6 +78,9 @@ function formatShortDate(d: Date) {
 function formatDateRange(from: string, to: string) {
   return `${formatShortDate(new Date(from))} — ${formatShortDate(new Date(to))}`;
 }
+function formatDateTimeRange(from: string, to: string) {
+  return `${new Date(from).toLocaleString("uk-UA")} — ${new Date(to).toLocaleString("uk-UA")}`;
+}
 
 function guessStatus(p: BookedPeriod): PeriodStatus {
   const n = p.note?.toLowerCase() ?? "";
@@ -96,6 +112,7 @@ export default function AdminOccupancyPage() {
   const [periods, setPeriods] = useState<BookedPeriod[]>([]);
   const [equipmentList, setEquipmentList] = useState<EquipmentOption[]>([]);
   const [processedOrders, setProcessedOrders] = useState<OrderOption[]>([]);
+  const [conflicts, setConflicts] = useState<OccupancyConflict[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Calendar state
@@ -128,12 +145,14 @@ export default function AdminOccupancyPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [p, eq, allOrders] = await Promise.all([
+      const [p, eq, allOrders, conflictRows] = await Promise.all([
         apiFetch<BookedPeriod[]>("/admin/occupancy"),
         apiFetch<EquipmentOption[]>("/equipment?limit=100"),
         apiFetch<OrderOption[]>("/admin/orders").catch(() => [] as OrderOption[]),
+        apiFetch<OccupancyConflict[]>("/admin/occupancy/conflicts").catch(() => [] as OccupancyConflict[]),
       ]);
       setPeriods(p);
+      setConflicts(conflictRows);
       setEquipmentList(eq.map((e) => ({ id: e.id, name: e.name })));
       // Exclude cancelled orders
       setProcessedOrders(allOrders.filter((o) => o.status !== "CANCELLED"));
@@ -186,6 +205,18 @@ export default function AdminOccupancyPage() {
       return pFrom <= mEnd && pTo >= mStart;
     });
   }, [periods, year, month]);
+
+  const monthConflicts = useMemo(() => {
+    const mStart = new Date(year, month, 1);
+    const mEnd = new Date(year, month + 1, 0, 23, 59, 59);
+
+    return conflicts.filter((conflict) => {
+      if (selectedEquipmentId && conflict.equipmentId !== selectedEquipmentId) return false;
+      const from = new Date(conflict.overlapFrom);
+      const to = new Date(conflict.overlapTo);
+      return from <= mEnd && to >= mStart;
+    });
+  }, [conflicts, selectedEquipmentId, year, month]);
 
   /* ── Actions ───────────────────────────────────── */
   function openCreate() {
@@ -333,6 +364,45 @@ export default function AdminOccupancyPage() {
       >
         <AdminButton onClick={openCreate}>Додати зайнятість</AdminButton>
       </AdminPageHeader>
+
+      {monthConflicts.length > 0 ? (
+        <AdminCard className="mb-4 border-red-200 bg-red-50">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-bold text-red-900">Виявлено накладки</h2>
+                <p className="text-xs text-red-700">
+                  Є перетин зайнятості по одній і тій самій техніці. Перевір ці замовлення перед підтвердженням.
+                </p>
+              </div>
+              <StatusBadge status="cancelled" label={`${monthConflicts.length} конфліктів`} />
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {monthConflicts.slice(0, 6).map((conflict) => (
+                <div
+                  key={`${conflict.firstPeriodId}-${conflict.secondPeriodId}`}
+                  className="rounded-lg border border-red-100 bg-white/80 px-3 py-2 text-sm text-red-900"
+                >
+                  <div className="font-semibold">{conflict.equipmentName ?? "Техніка"}</div>
+                  <div className="mt-1 text-xs text-red-700">
+                    Перетин: {formatDateTimeRange(conflict.overlapFrom, conflict.overlapTo)}
+                  </div>
+                  <div className="mt-1 text-xs text-red-700">
+                    №{conflict.firstOrderNumber ?? "—"} {conflict.firstCustomerName ?? "—"}
+                    {" "}↔{" "}
+                    №{conflict.secondOrderNumber ?? "—"} {conflict.secondCustomerName ?? "—"}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {monthConflicts.length > 6 ? (
+              <p className="text-xs font-medium text-red-700">
+                Показано перші 6 конфліктів. Використай фільтр по техніці, щоб звузити список.
+              </p>
+            ) : null}
+          </div>
+        </AdminCard>
+      ) : null}
 
       {/* ── Content: Calendar + List ── */}
       <div className="flex flex-1 flex-col gap-4 lg:flex-row">

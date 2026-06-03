@@ -2,6 +2,8 @@ import { Helmet } from "react-helmet-async";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileTabBar from "../components/MobileTabBar";
+import { DEFAULT_OG_IMAGE, absoluteSiteUrl } from "../utils/seo";
+import { trackPhoneClick } from "../lib/analytics";
 
 const contactInfo = [
   {
@@ -49,25 +51,39 @@ export default function ContactsPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans">
       <Helmet>
-        <title>Контакти — TechnoRent | Зв'язатися з нами</title>
+        <title>Контакти TechnoRent | Оренда спецтехніки у Львові</title>
         <meta
           name="description"
-          content="Контакти TechnoRent — оренда спецтехніки у Львові. Телефон, email, графік роботи. Зв'яжіться з нами для замовлення будівельної техніки."
+          content="Телефон, email і графік роботи TechnoRent у Львові. Зв'яжіться з нами, щоб уточнити оренду техніки або послугу."
         />
-        <link rel="canonical" href="https://technorent.ua/contacts" />
+        <link rel="canonical" href={absoluteSiteUrl("/contacts")} />
+        <meta property="og:title" content="Контакти TechnoRent" />
+        <meta
+          property="og:description"
+          content="Телефон, email і графік роботи TechnoRent у Львові. Зв'яжіться з нами щодо оренди техніки або послуги."
+        />
+        <meta property="og:url" content={absoluteSiteUrl("/contacts")} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Контакти TechnoRent" />
+        <meta
+          name="twitter:description"
+          content="Телефон, email і графік роботи TechnoRent у Львові. Зв'яжіться з нами щодо оренди техніки або послуги."
+        />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
 
       <Header />
       <MobileTabBar />
 
       {/* Hero */}
-      <section className="w-full bg-dark px-[120px] py-16 max-xl:px-8 max-md:px-4 max-md:py-10">
+      <section className="contacts-hero-legacy w-full bg-dark px-[120px] py-16 max-xl:px-8 max-md:px-4 max-md:py-10">
         <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-[42px] font-bold leading-tight text-white max-lg:text-3xl max-md:text-2xl">
-            <span className="text-primary">Контакти</span> TechnoRent
+          <h1 className="contacts-hero-legacy__title text-[42px] font-bold leading-tight text-white max-lg:text-3xl max-md:text-2xl">
+            <span className="contacts-hero-legacy__accent text-primary">Контакти</span> TechnoRent
           </h1>
-          <p className="mt-3 text-base font-medium text-gray-300 max-md:text-sm">
-            Зв'яжіться з нами для замовлення техніки або консультації
+          <p className="contacts-hero-legacy__subtitle mt-3 text-base font-medium text-gray-300 max-md:text-sm">
+            Телефонуйте або пишіть, якщо потрібно підібрати машину чи уточнити умови роботи.
           </p>
         </div>
       </section>
@@ -90,6 +106,7 @@ export default function ContactsPage() {
                   {c.href ? (
                     <a
                       href={c.href}
+                      onClick={c.href.startsWith("tel:") ? () => trackPhoneClick({ placement: "contacts_card" }) : undefined}
                       className="mt-0.5 text-[15px] font-bold text-dark transition-colors hover:text-primary"
                     >
                       {c.value}
@@ -123,11 +140,12 @@ export default function ContactsPage() {
             Маєте питання?
           </h2>
           <p className="mt-2 text-sm font-medium text-dark-text">
-            Зателефонуйте нам або напишіть на email — відповімо протягом 30 хвилин
+            Опишіть роботу й адресу. Ми уточнимо доступну техніку, дату подачі та попередню вартість.
           </p>
           <div className="mt-6 flex justify-center gap-3 max-md:flex-col">
             <a
               href="tel:+380670000000"
+              onClick={() => trackPhoneClick({ placement: "contacts_cta" })}
               className="rounded-full bg-primary px-8 py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
             >
               Зателефонувати

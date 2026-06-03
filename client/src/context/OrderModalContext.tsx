@@ -1,18 +1,7 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
-import OrderModal from "../components/OrderModal";
+import { lazy, Suspense, useState, type ReactNode } from "react";
+import { OrderModalContext, type OrderModalOptions } from "./order-modal-context";
 
-interface OrderModalOptions {
-  equipmentName?: string;
-  equipmentId?: string;
-}
-
-interface OrderModalContextValue {
-  openOrderModal: (options?: OrderModalOptions) => void;
-}
-
-const OrderModalContext = createContext<OrderModalContextValue>({
-  openOrderModal: () => {},
-});
+const OrderModal = lazy(() => import("../components/OrderModal"));
 
 export function OrderModalProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,16 +16,15 @@ export function OrderModalProvider({ children }: { children: ReactNode }) {
     <OrderModalContext.Provider value={{ openOrderModal }}>
       {children}
       {isOpen && (
-        <OrderModal
-          equipmentName={options.equipmentName}
-          equipmentId={options.equipmentId}
-          onClose={() => setIsOpen(false)}
-        />
+        <Suspense fallback={null}>
+          <OrderModal
+            equipmentName={options.equipmentName}
+            equipmentId={options.equipmentId}
+            serviceName={options.serviceName}
+            onClose={() => setIsOpen(false)}
+          />
+        </Suspense>
       )}
     </OrderModalContext.Provider>
   );
-}
-
-export function useOrderModal() {
-  return useContext(OrderModalContext);
 }

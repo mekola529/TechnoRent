@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../api/client";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 interface LoginResponse {
   token: string;

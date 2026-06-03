@@ -1,5 +1,6 @@
 import type { Equipment, EquipmentType } from "./types";
 import { apiFetch } from "../api/client";
+import type { LeadAttributionPayload } from "../lib/attribution";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -26,8 +27,12 @@ interface ApiEquipment {
   brand: string;
   type: string;
   description: string;
+  pricingType?: string;
   pricePerHour: number;
   isPopular: boolean;
+  baseAddress: string | null;
+  baseLatitude: number | null;
+  baseLongitude: number | null;
   specs: { id: string; label: string; value: string }[];
   images: { id: string; url: string; alt: string }[];
   bookedPeriods: { id: string; from: string; to: string; note: string | null }[];
@@ -141,8 +146,26 @@ export function isAvailableOnDate(equipment: Equipment, date: string): boolean {
 }
 
 /** Форматувати ціну */
-export function formatPrice(pricePerHour: number): string {
-  return `від ${pricePerHour} грн/год`;
+export function formatPrice(pricePerHour: number, pricingType?: string): string {
+  return formatEquipmentPrice(pricePerHour, pricingType ?? "hourly_from");
+}
+
+export function formatEquipmentPrice(price: number, pricingType?: string): string {
+  const formatted = new Intl.NumberFormat("uk-UA", { maximumFractionDigits: 0 }).format(price);
+  switch (pricingType) {
+    case "fixed_from":
+      return `від ${formatted} грн`;
+    case "calculator":
+      return "розрахунок у калькуляторі";
+    case "tow_calculator":
+    case "material_delivery_calculator":
+      return `${formatted} грн/км`;
+    case "custom":
+      return "ціна розраховується індивідуально";
+    case "hourly_from":
+    default:
+      return `від ${formatted} грн/год`;
+  }
 }
 
 // ─── Orders API ───────────────────────────────────
@@ -154,8 +177,13 @@ export async function createOrder(data: {
   dateFrom?: string;
   dateTo?: string;
   address?: string;
+  addressTo?: string;
   comment?: string;
   equipmentId?: string;
+  requestType?: "equipment_rental" | "service" | "tow" | "callback";
+  serviceName?: string;
+  metadata?: Record<string, unknown>;
+  attribution?: LeadAttributionPayload;
 }): Promise<{ id: string }> {
   return apiFetch("/orders", {
     method: "POST",

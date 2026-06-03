@@ -1,18 +1,29 @@
 import { logError } from "../lib/logger.js";
 import { Router } from "express";
-import { prisma } from "../lib/prisma.js";
+import { pool } from "../lib/db.js";
 import { compare } from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { validate } from "../middleware/validate.js";
+import { authMiddleware, type AuthRequest } from "../middleware/auth.js";
+import rateLimit from "express-rate-limit";
 
 export const authRouter = Router();
 
-const _jwtSecret = process.env.JWT_SECRET;
-if (!_jwtSecret) {
-  throw new Error("JWT_SECRET environment variable is required");
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  message: { error: "Забагато спроб. Спробуйте пізніше." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+function getJwtSecret(): string {
+  const s = process.env.JWT_SECRET;
+  if (!s) throw new Error("JWT_SECRET environment variable is required");
+  return s;
 }
-const JWT_SECRET: string = _jwtSecret;
 
 const loginSchema = z.object({
   email: z.string().min(1, "Логін обов'язковий"),
@@ -20,11 +31,15 @@ const loginSchema = z.object({
 });
 
 /** Авторизація адміна */
-authRouter.post("/login", validate(loginSchema), async (req, res) => {
+authRouter.post("/login", loginLimiter, validate(loginSchema), async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const admin = await prisma.admin.findUnique({ where: { email } });
+    const { rows } = await pool.query(
+      `SELECT "id", "email", "passwordHash", "role" FROM "Admin" WHERE "email" = $1`,
+      [email],
+    );
+    const admin = rows[0];
     if (!admin) {
       res.status(401).json({ error: "Невірний логін або пароль" });
       return;
@@ -38,8 +53,8 @@ authRouter.post("/login", validate(loginSchema), async (req, res) => {
 
     const token = jwt.sign(
       { id: admin.id, role: admin.role },
-      JWT_SECRET,
-      { expiresIn: "24h" }
+      getJwtSecret(),
+      { expiresIn: "24h", algorithm: "HS256" },
     );
 
     res.json({
@@ -53,23 +68,19 @@ authRouter.post("/login", validate(loginSchema), async (req, res) => {
 });
 
 /** Перевірка поточного токена */
-authRouter.get("/me", async (req, res) => {
+authRouter.get("/me", authMiddleware, async (req, res) => {
   try {
-    const header = req.headers.authorization;
-    if (!header?.startsWith("Bearer ")) {
+    const authReq = req as AuthRequest;
+    if (!authReq.adminId) {
       res.status(401).json({ error: "Не авторизовано" });
       return;
     }
 
-    const payload = jwt.verify(header.slice(7), JWT_SECRET) as {
-      id: string;
-      role: string;
-    };
-
-    const admin = await prisma.admin.findUnique({
-      where: { id: payload.id },
-      select: { id: true, email: true, role: true },
-    });
+    const { rows } = await pool.query(
+      `SELECT "id", "email", "role" FROM "Admin" WHERE "id" = $1`,
+      [authReq.adminId],
+    );
+    const admin = rows[0];
 
     if (!admin) {
       res.status(401).json({ error: "Адміна не знайдено" });

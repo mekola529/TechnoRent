@@ -1,16 +1,40 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
-const navItems = [
-  { to: "/admin/overview", label: "Огляд" },
-  { to: "/admin/equipment", label: "Техніка" },
-  { to: "/admin/orders", label: "Заявки" },
-  { to: "/admin/rent-orders", label: "Замовлення" },
-  { to: "/admin/service-requests", label: "Послуги" },
-  { to: "/admin/services-manage", label: "Управління послугами" },
-  { to: "/admin/occupancy", label: "Зайнятість" },
+const navGroups = [
+  {
+    items: [
+      { to: "/admin/overview", label: "Огляд" },
+      { to: "/admin/finance", label: "Фінанси" },
+      { to: "/admin/marketing", label: "Маркетинг" },
+      { to: "/admin/equipment", label: "Техніка" },
+      { to: "/admin/services-manage", label: "Управління послугами" },
+      { to: "/admin/supply", label: "Постачання" },
+      { to: "/admin/customers", label: "Клієнти" },
+      { to: "/admin/employees", label: "Працівники" },
+    ],
+  },
+  {
+    items: [
+      { to: "/admin/orders", label: "Заявки" },
+      { to: "/admin/rent-orders", label: "Замовлення" },
+      { to: "/admin/occupancy", label: "Зайнятість" },
+    ],
+  },
+  {
+    items: [
+      { to: "/admin/gps", label: "GPS" },
+      { to: "/admin/gps-map", label: "Мапа" },
+    ],
+  },
+  {
+    items: [
+      { to: "/admin/settings", label: "Налаштування" },
+      { to: "/admin/notifications", label: "Сповіщення" },
+    ],
+  },
 ];
 
 export default function AdminLayout() {
@@ -24,17 +48,20 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-[#0f1115] font-sans">
+    <div className="admin-layout-shell flex h-screen bg-[#0f1115] font-sans">
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
       {/* ── Mobile top bar ── */}
-      <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between bg-[#0f1115] px-4 py-2.5 md:hidden">
+      <div className="admin-mobile-topbar fixed left-0 right-0 top-0 z-[9998] flex items-center justify-between bg-[#0f1115] px-4 py-2.5 md:hidden">
         <span className="text-base font-bold text-primary">TechnoRent</span>
         <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-white"
+          type="button"
+          aria-label={sidebarOpen ? "Закрити меню" : "Відкрити меню"}
+          aria-expanded={sidebarOpen}
+          onClick={() => setSidebarOpen((open) => !open)}
+          className="admin-mobile-menu-button relative z-[10000] flex h-10 w-10 touch-manipulation items-center justify-center rounded-lg text-white"
         >
           {sidebarOpen ? (
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
@@ -51,14 +78,14 @@ export default function AdminLayout() {
       {/* ── Overlay ── */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          className="fixed inset-0 z-[9997] bg-black/40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* ── Sidebar ── */}
       <aside
-        className={`fixed top-0 left-0 z-50 flex h-full w-52 shrink-0 flex-col bg-[#0f1115] px-3 py-4 transition-transform duration-200 md:static md:translate-x-0 ${
+        className={`fixed left-0 top-0 z-[9999] flex h-full w-52 shrink-0 flex-col bg-[#0f1115] px-3 py-4 transition-transform duration-200 md:static md:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -69,22 +96,29 @@ export default function AdminLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex flex-col gap-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={() => setSidebarOpen(false)}
-              className={({ isActive }) =>
-                `relative rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors ${
-                  isActive
-                    ? "bg-primary/15 text-primary before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-4 before:w-[3px] before:rounded-r before:bg-primary"
-                    : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
-                }`
-              }
+        <nav className="flex flex-col gap-3 overflow-y-auto pr-1">
+          {navGroups.map((group, groupIndex) => (
+            <div
+              key={groupIndex}
+              className={groupIndex === 0 ? "flex flex-col gap-1" : "flex flex-col gap-1 border-t border-white/10 pt-3"}
             >
-              {item.label}
-            </NavLink>
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setSidebarOpen(false)}
+                  className={({ isActive }) =>
+                    `relative rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors ${
+                      isActive
+                        ? "bg-primary/15 text-primary before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-4 before:w-[3px] before:rounded-r before:bg-primary"
+                        : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
+                    }`
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 

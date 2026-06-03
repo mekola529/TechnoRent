@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import type { Equipment } from "../data/types";
 
 const STORAGE_KEY = "recently_viewed";
@@ -69,20 +69,23 @@ export function toEquipmentCard(s: StoredItem): Equipment {
  * Saves minimal data to localStorage, returns items excluding current.
  */
 export function useRecentlyViewed(current: Equipment | undefined) {
-  const [others, setOthers] = useState<Equipment[]>([]);
+  const others = useMemo(() => {
+    if (!current) return [];
+
+    const stored = readStorage();
+    return stored
+      .filter((s) => s.id !== current.id)
+      .slice(0, MAX_ITEMS)
+      .map(toEquipmentCard);
+  }, [current]);
 
   useEffect(() => {
     if (!current) return;
 
     const stored = readStorage();
-
-    // Remove current from list if exists, then prepend
     const filtered = stored.filter((s) => s.id !== current.id);
     const updated = [toStoredItem(current), ...filtered].slice(0, MAX_ITEMS);
     writeStorage(updated);
-
-    // Return others (excluding current) as Equipment-like objects
-    setOthers(filtered.slice(0, MAX_ITEMS).map(toEquipmentCard));
   }, [current]);
 
   return others;

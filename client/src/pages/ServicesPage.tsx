@@ -1,18 +1,19 @@
-import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+import PageMeta from "../components/PageMeta";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileTabBar from "../components/MobileTabBar";
-import { useOrderModal } from "../context/OrderModalContext";
+import ServiceCard from "../components/ServiceCard";
+import { useOrderModal } from "../context/useOrderModal";
 import { getActiveServices } from "../data/services";
 import type { Service } from "../data/services";
+import { DEFAULT_OG_IMAGE, absoluteSiteUrl } from "../utils/seo";
 
 const advantages = [
-  { title: "Техніка з оператором", desc: "Надаємо досвідчених операторів разом із технікою" },
-  { title: "Гнучкі умови оренди", desc: "Погодинна, поденна або довгострокова оренда" },
-  { title: "Доставка на об'єкт", desc: "Організуємо доставку техніки на ваш майданчик" },
-  { title: "Технічне обслуговування", desc: "Вся техніка проходить регулярне ТО та справна" },
+  { title: "Техніка з оператором", desc: "Для робіт, де потрібне керування машиною, погоджуємо подачу з оператором." },
+  { title: "Розрахунок під задачу", desc: "Ціна залежить від техніки, тривалості, адреси та обсягу робіт." },
+  { title: "Подача на адресу", desc: "Після уточнення деталей погоджуємо, куди й коли подати машину." },
+  { title: "Пов'язані роботи", desc: "За потреби поєднаємо копання, навантаження і вивезення матеріалу." },
 ];
 
 export default function ServicesPage() {
@@ -29,14 +30,12 @@ export default function ServicesPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans">
-      <Helmet>
-        <title>Послуги — TechnoRent | Оренда спецтехніки у Львові</title>
-        <meta
-          name="description"
-          content="Послуги оренди будівельної техніки у Львові: земляні роботи, демонтаж, вивіз сміття, планування ділянок, монтажні роботи. Техніка з оператором, доставка на об'єкт."
-        />
-        <link rel="canonical" href="https://technorent.ua/services" />
-      </Helmet>
+      <PageMeta
+        title="Послуги TechnoRent | Спецтехніка у Львові та області"
+        description="Земляні роботи, демонтаж, вивіз сміття, перевезення матеріалів і евакуатор у Львові та області. Оберіть потрібну послугу."
+        canonical={absoluteSiteUrl("/services")}
+        image={DEFAULT_OG_IMAGE}
+      />
 
       <Header />
       <MobileTabBar />
@@ -45,10 +44,10 @@ export default function ServicesPage() {
       <section className="w-full bg-dark px-[120px] py-16 max-xl:px-8 max-md:px-4 max-md:py-10">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="text-[42px] font-bold leading-tight text-white max-lg:text-3xl max-md:text-2xl">
-            Наші <span className="text-primary">послуги</span>
+            Роботи зі <span className="text-primary">спецтехнікою</span>
           </h1>
           <p className="mt-3 text-base font-medium text-gray-300 max-md:text-sm">
-            Повний спектр будівельних послуг із використанням власної техніки у Львові та Львівській області
+            Земляні роботи, демонтаж, вивіз відходів, доставка матеріалів та евакуатор у Львові й області.
           </p>
         </div>
       </section>
@@ -56,54 +55,31 @@ export default function ServicesPage() {
       {/* Services grid */}
       <section className="w-full px-[120px] py-14 max-xl:px-8 max-md:px-4 max-md:py-8">
         {loading ? (
-          <div className="grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-md:grid-cols-1">
+          <div className="grid grid-cols-[repeat(3,minmax(0,340px))] justify-center gap-5 max-lg:grid-cols-2 max-md:grid-cols-1">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="animate-pulse overflow-hidden rounded-[14px] border border-border bg-white">
-                <div className="h-[180px] bg-gray-200" />
-                <div className="flex flex-col gap-3 p-5">
+              <div key={i} className="animate-pulse rounded-2xl border border-border bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.08)]">
+                <div className="h-[180px] rounded-xl bg-gray-200" />
+                <div className="flex flex-col gap-3 pt-3">
                   <div className="h-5 w-3/4 rounded bg-gray-200" />
-                  <div className="h-3 w-full rounded bg-gray-200" />
-                  <div className="h-3 w-5/6 rounded bg-gray-200" />
-                  <div className="mt-2 h-8 w-28 rounded-full bg-gray-200" />
+                  <div className="h-4 w-1/2 rounded bg-gray-200" />
+                  <div className="h-10 w-28 rounded-full bg-gray-200" />
                 </div>
               </div>
             ))}
           </div>
         ) : (
-        <div className="grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-md:grid-cols-1">
-          {allServices.map((s) => (
-            <Link
-              key={s.slug}
-              to={`/services/${s.slug}`}
-              className="group flex flex-col overflow-hidden rounded-[14px] border border-border bg-white transition-shadow hover:shadow-md"
-            >
-              <div className="h-[180px] w-full overflow-hidden bg-light-bg">
-                <img
-                  src={s.image}
-                  alt={s.title}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
-                  width={400}
-                  height={180}
-                />
-              </div>
-              <div className="flex flex-1 flex-col gap-2 p-5">
-                <h3 className="text-lg font-bold text-dark">{s.title}</h3>
-                <p className="text-[13px] leading-relaxed text-dark-text">{s.shortDescription}</p>
-                <span className="mt-auto inline-flex w-fit items-center rounded-full bg-primary px-4 py-2 text-xs font-bold text-dark transition-opacity group-hover:opacity-90">
-                  Детальніше
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+          <div className="grid grid-cols-[repeat(3,minmax(0,340px))] justify-center gap-5 max-lg:grid-cols-2 max-md:grid-cols-1">
+            {allServices.map((service) => (
+              <ServiceCard key={service.id} service={service} />
+            ))}
+          </div>
         )}
       </section>
 
       {/* Advantages */}
       <section className="w-full bg-light-bg px-[120px] py-14 max-xl:px-8 max-md:px-4 max-md:py-8">
         <h2 className="mb-8 text-center text-[32px] font-bold text-dark max-md:text-2xl">
-          Що ми пропонуємо
+          Як оформити роботу
         </h2>
         <div className="grid grid-cols-4 gap-5 max-lg:grid-cols-2 max-md:grid-cols-1">
           {advantages.map((a) => (
@@ -124,10 +100,10 @@ export default function ServicesPage() {
       <section className="w-full px-[120px] py-14 max-xl:px-8 max-md:px-4 max-md:py-8">
         <div className="mx-auto max-w-2xl rounded-[18px] bg-dark p-10 text-center max-md:p-6">
           <h2 className="text-[28px] font-bold text-white max-md:text-xl">
-            Потрібна техніка для проєкту?
+            Маєте задачу на об'єкті?
           </h2>
           <p className="mt-2 text-sm font-medium text-gray-300">
-            Залиште заявку і ми підберемо оптимальне рішення для вашого завдання
+            Вкажіть адресу та вид робіт. Менеджер підкаже, яка техніка потрібна і як рахується ціна.
           </p>
           <button
             onClick={() => openOrderModal()}

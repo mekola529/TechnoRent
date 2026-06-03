@@ -12,6 +12,7 @@ import Skeleton, { CatalogCardSkeleton } from "../components/Skeleton";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileTabBar from "../components/MobileTabBar";
+import { DEFAULT_OG_IMAGE, absoluteSiteUrl } from "../utils/seo";
 
 type SortOption = "popular" | "price-asc" | "price-desc" | "name";
 
@@ -42,19 +43,28 @@ export default function CatalogPage() {
 
   // Завантажити техніку при зміні фільтрів
   useEffect(() => {
-    setLoading(true);
-    getAllEquipment({
-      type: selectedType !== "all" ? selectedType : undefined,
-      brand: selectedBrand !== "all" ? selectedBrand : undefined,
-      sort: sort === "popular" ? undefined : sort,
-    }).then((items) => {
-      // Додаткове сортування "за популярністю" на клієнті
+    let cancelled = false;
+
+    Promise.resolve().then(async () => {
+      setLoading(true);
+      const items = await getAllEquipment({
+        type: selectedType !== "all" ? selectedType : undefined,
+        brand: selectedBrand !== "all" ? selectedBrand : undefined,
+        sort: sort === "popular" ? undefined : sort,
+      });
+
+      if (cancelled) return;
+
       if (sort === "popular") {
         items.sort((a, b) => Number(b.isPopular) - Number(a.isPopular));
       }
       setEquipment(items);
       setLoading(false);
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [selectedType, selectedBrand, sort]);
 
   const resetFilters = () => {
@@ -65,9 +75,10 @@ export default function CatalogPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans">
       <PageMeta
-        title="Каталог спецтехніки — оренда екскаваторів, навантажувачів, кранів"
-        description="Каталог будівельної техніки в оренду у Львові. Екскаватори, навантажувачі, бульдозери, крани, катки, самоскиди. Фільтруйте за категорією, брендом та ціною."
-        canonical="https://technorent.ua/catalog"
+        title="Каталог спецтехніки у Львові: оренда машин для робіт"
+        description="Каталог техніки в оренду у Львові та області. Перегляньте екскаватори, навантажувачі, самоскиди, крани та евакуатор."
+        canonical={absoluteSiteUrl("/catalog")}
+        image={DEFAULT_OG_IMAGE}
       />
       <Header />
       <MobileTabBar />
@@ -78,7 +89,7 @@ export default function CatalogPage() {
           Каталог техніки
         </h1>
         <p className="text-base font-medium text-dark-text">
-          Оберіть потрібну техніку за категорією, брендом та ціною.
+          Відфільтруйте машини за типом і брендом, а на сторінці техніки перевірте характеристики та ціну.
         </p>
       </section>
 
@@ -155,13 +166,13 @@ export default function CatalogPage() {
 
           {/* Equipment Grid */}
           {loading ? (
-            <div className="grid grid-cols-3 gap-4 max-xl:grid-cols-2 max-md:grid-cols-1">
+            <div className="grid grid-cols-[repeat(3,minmax(0,300px))] justify-center gap-4 max-xl:grid-cols-2 max-md:grid-cols-1">
               {Array.from({ length: 6 }).map((_, i) => (
                 <CatalogCardSkeleton key={i} />
               ))}
             </div>
           ) : equipment.length > 0 ? (
-            <div className="grid grid-cols-3 gap-4 max-xl:grid-cols-2 max-md:grid-cols-1">
+            <div className="grid grid-cols-[repeat(3,minmax(0,300px))] justify-center gap-4 max-xl:grid-cols-2 max-md:grid-cols-1">
               {equipment.map((item) => (
                 <EquipmentCard key={item.id} item={item} />
               ))}
@@ -170,7 +181,7 @@ export default function CatalogPage() {
             <div className="flex flex-col items-center justify-center gap-3 py-20">
               <p className="text-xl font-bold text-dark">Нічого не знайдено</p>
               <p className="text-sm text-dark-text">
-                Спробуйте змінити параметри фільтрації
+                Змініть категорію або бренд, щоб побачити інші машини.
               </p>
               <button
                 onClick={resetFilters}

@@ -1,5 +1,6 @@
 export { default as AdminButton } from "./AdminButton";
 export { default as AdminCard } from "./AdminCard";
+export { default as AdminAccordionSection } from "./AdminAccordionSection";
 export { default as AdminFilterBar } from "./AdminFilterBar";
 export { AdminInput, AdminTextarea, AdminSelect } from "./AdminInput";
 export { default as AdminPageHeader } from "./AdminPageHeader";

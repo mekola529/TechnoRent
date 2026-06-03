@@ -1,192 +1,141 @@
-<div align="center">
+# TechnoRent
 
-# 🏗️ TechnoRent
+TechnoRent is a rental and service CRM for construction equipment. The project includes a public website, customer cabinet, admin CRM, order finance, Monobank payments, GPS tracking, notifications, and service request management.
 
-**Платформа для оренди будівельної спецтехніки у Львові**
+## Stack
 
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://typescriptlang.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)](https://expressjs.com)
-[![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma&logoColor=white)](https://prisma.io)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://postgresql.org)
+- Frontend: React 19, Vite, TypeScript, Tailwind CSS
+- Backend: Node.js, Express, TypeScript
+- Database: PostgreSQL through `pg` and raw SQL runtime schema setup
+- Integrations: Monobank acquiring, Telegram notifications, EquGPS/Traccar-compatible GPS source
 
-</div>
+## Project Structure
 
----
-
-## 📋 Про проект
-
-**TechnoRent** — це повнофункціональний веб-додаток для компанії з оренди будівельної спецтехніки. Сайт включає публічну частину для клієнтів та адмін-панель для управління технікою, заявками та календарем зайнятості.
-
-### Основні можливості
-
-🔹 **Публічна частина**
-- Головна сторінка з Hero-секцією, популярною технікою, перевагами
-- Каталог техніки з фільтрами (категорія, бренд) та сортуванням
-- Детальна сторінка техніки з характеристиками, календарем зайнятості та формою замовлення
-- SEO-оптимізація: мета-теги, Open Graph, JSON-LD Schema.org, sitemap.xml
-
-🔹 **Адмін-панель**
-- Авторизація через JWT
-- Управління технікою (CRUD)
-- Обробка заявок клієнтів зі зміною статусів
-- Календар зайнятості техніки з трьома типами бронювань:
-  - 📋 Заброньовано
-  - 🔧 Оренда
-  - ⚙️ Техобслуговування
-
----
-
-## 🛠️ Технології
-
-| Шар | Стек |
-|-----|------|
-| **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS v4 |
-| **Backend** | Express 5, TypeScript, Prisma 6, Zod |
-| **База даних** | PostgreSQL 16 |
-| **Автентифікація** | JWT (jsonwebtoken + bcryptjs) |
-| **Шрифти** | Montserrat (Google Fonts) |
-| **Деплой** | Docker, Docker Compose |
-
----
-
-## 📁 Структура проекту
-
-```
-TechnoRent/
-├── client/                    # React frontend
-│   ├── src/
-│   │   ├── api/               # API клієнт (apiFetch)
-│   │   ├── components/        # UI компоненти
-│   │   ├── context/           # AuthContext
-│   │   ├── data/              # Сервіси та типи даних
-│   │   └── pages/             # Сторінки
-│   ├── public/                # Статичні файли, robots.txt, sitemap.xml
-│   └── index.html
-├── server/                    # Express backend
-│   ├── src/
-│   │   ├── routes/            # API маршрути
-│   │   ├── middleware/        # Auth, validation
-│   │   └── lib/               # Prisma клієнт
-│   └── prisma/
-│       ├── schema.prisma      # Схема бази даних
-│       └── seed.ts            # Seed дані (6 одиниць техніки + адмін)
-├── Dockerfile                 # Multi-stage Docker build
-├── docker-compose.yml         # PostgreSQL + App
-└── package.json               # Monorepo скрипти
+```text
+client/          React public site, customer cabinet, admin UI
+server/          Express API, PostgreSQL schema setup, integrations
+docs/            Technical documentation and deploy notes
+scripts/         Local helper scripts for ngrok/Monobank/Telegram
+uploads/         Runtime uploads, not committed
+client_dist/     Production frontend build copy, not committed
 ```
 
----
+## Local Setup
 
-## 🚀 Швидкий старт
-
-### Вимоги
-
-- **Node.js** ≥ 20
-- **PostgreSQL** ≥ 16
-- **npm**
-
-### Встановлення
+Install dependencies:
 
 ```bash
-# 1. Клонувати репозиторій
-git clone https://github.com/mekola529/TechnoRent.git
-cd TechnoRent
-
-# 2. Встановити залежності (клієнт + сервер)
 npm install
-
-# 3. Налаштувати змінні середовища
-cp .env.example .env
-# Відредагуйте .env — вкажіть DATABASE_URL та JWT_SECRET
 ```
 
-### Налаштування бази даних
+Create local environment:
 
 ```bash
-# Застосувати міграції
-npm run db:migrate
-
-# Наповнити тестовими даними (6 техніки + адмін)
-npm run db:seed
+cp .env.example .env
 ```
 
-### Запуск у режимі розробки
+Minimum local variables:
+
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/technorent"
+JWT_SECRET="generate-with-openssl-rand-base64-32"
+ADMIN_EMAIL="admin"
+ADMIN_PASSWORD="your-local-password"
+PORT=3001
+CLIENT_URL="http://localhost:5173"
+SITE_URL="http://localhost:5173"
+```
+
+Run the full local project:
 
 ```bash
 npm run dev
 ```
 
-Сервер запуститься на `http://localhost:3001`, клієнт на `http://localhost:5173`.
+Default local URLs:
 
-### Запуск через Docker
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:3001/api`
+
+## Build
+
+Run a full production build:
 
 ```bash
-# Генеруємо JWT_SECRET
-echo "JWT_SECRET=$(openssl rand -base64 32)" >> .env
-
-# Запуск
-docker compose up -d
+npm run build
 ```
 
-Додаток буде доступний на `http://localhost:3001`.
+This builds:
 
----
+- `server/dist`
+- `client/dist`
+- `client_dist` copy used for cPanel-style deploy archives
 
-## ⚙️ Змінні середовища
+## Deployment Notes
 
-| Змінна | Опис | Приклад |
-|--------|------|---------|
-| `DATABASE_URL` | Підключення до PostgreSQL | `postgresql://user:pass@localhost:5432/technorent` |
-| `JWT_SECRET` | Секрет для JWT токенів | `openssl rand -base64 32` |
-| `ADMIN_EMAIL` | Email/логін адміна | `admin` |
-| `ADMIN_PASSWORD` | Пароль адміна (для seed) | `password` |
-| `PORT` | Порт сервера | `3001` |
-| `CLIENT_URL` | URL фронтенду (CORS) | `http://localhost:5173` |
+The deploy archive is created manually when needed. It should include production build output and server runtime dependencies, but should not include:
 
----
+- `.env`
+- Docker files
+- `telegram-bot/`
+- local logs
+- local ZIP artifacts
 
-## 📡 API
+Telegram bot deployment is handled separately when required.
 
-### Публічні маршрути
+Before deploying, check:
 
-| Метод | Шлях | Опис |
-|-------|------|------|
-| `GET` | `/api/equipment` | Список техніки (фільтри, сортування) |
-| `GET` | `/api/equipment/:slug` | Деталі техніки |
-| `GET` | `/api/equipment/meta/brands` | Унікальні бренди |
-| `GET` | `/api/equipment/meta/types` | Доступні типи |
-| `POST` | `/api/orders` | Створити заявку |
-| `POST` | `/api/auth/login` | Авторизація адміна |
+```bash
+npm run build
+```
 
-### Захищені маршрути (JWT)
+Then review:
 
-| Метод | Шлях | Опис |
-|-------|------|------|
-| `POST` | `/api/admin/equipment` | Додати техніку |
-| `PUT` | `/api/admin/equipment/:id` | Оновити техніку |
-| `DELETE` | `/api/admin/equipment/:id` | Видалити техніку |
-| `GET` | `/api/admin/orders` | Список заявок |
-| `PATCH` | `/api/admin/orders/:id/status` | Змінити статус заявки |
-| `DELETE` | `/api/admin/orders/:id` | Видалити заявку |
-| `GET` | `/api/admin/occupancy` | Бронювання техніки |
-| `POST` | `/api/admin/occupancy` | Додати бронювання |
-| `PUT` | `/api/admin/occupancy/:id` | Оновити бронювання |
-| `DELETE` | `/api/admin/occupancy/:id` | Видалити бронювання |
+- `docs/DEPLOY_PRODUCTION_CPANEL.md`
+- `docs/CPANEL_DEPLOY.md`
+- `docs/README.md`
 
----
+## Important Environment Rules
 
-## 🎨 Дизайн
+Do not add `VITE_` to secret variables. Every `VITE_*` value is bundled into the frontend and becomes public.
 
-- **Основний колір:** `#F2B705` (жовтий)
-- **Темний:** `#111111`
-- **Фон:** `#F5F5F5`
-- **Шрифт:** Montserrat (400, 500, 600, 700)
-- **Адаптивний дизайн** для desktop, tablet та mobile
+Keep these backend-only:
 
----
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `MONOBANK_MERCHANT_TOKEN`
+- `MONOBANK_PUBLIC_KEY`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_INTERNAL_TOKEN`
+- `SMTP_PASSWORD`
+- `EQUGPS_EMAIL`
+- `EQUGPS_PASSWORD`
 
-## 📄 Ліцензія
+Allowed public frontend variables:
 
-Цей проект створений в навчальних цілях.
+```env
+VITE_API_URL="https://your-domain.example/api"
+VITE_SITE_URL="https://your-domain.example"
+VITE_GTM_ID="GTM-XXXXXXX"
+```
+
+## Documentation
+
+Start with:
+
+- `docs/README.md`
+- `docs/TECHNICAL_OVERVIEW.md`
+- `docs/PROJECT_CONTEXT.md`
+- `docs/API_REFERENCE.md`
+- `docs/DEPLOY_PRODUCTION_CPANEL.md`
+
+## Current Main Features
+
+- Public catalog of equipment and services
+- Equipment/service order forms
+- Customer account and request/order cabinet
+- Monobank payment links and webhook sync
+- Admin CRM for requests, rent orders, finance, employees, customers, notifications, GPS, settings
+- Worker assignment and optional customer-visible worker contact
+- PostgreSQL schema initialization on backend startup
+- Dynamic sitemap and SEO metadata

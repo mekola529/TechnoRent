@@ -6,11 +6,17 @@ import Footer from "../components/Footer";
 import MobileTabBar from "../components/MobileTabBar";
 import EquipmentCard from "../components/EquipmentCard";
 import Skeleton from "../components/Skeleton";
-import { useOrderModal } from "../context/OrderModalContext";
+import TowCalculatorModal from "../components/TowCalculatorModal";
+import MaterialDeliveryCalculatorModal from "../components/MaterialDeliveryCalculatorModal";
+import PageMeta from "../components/PageMeta";
+import { absoluteImageUrl, absoluteSiteUrl } from "../utils/seo";
+import { useOrderModal } from "../context/useOrderModal";
 import { getServiceBySlug, getActiveServices } from "../data/services";
+import { serviceEditorialContent } from "../data/serviceEditorialContent";
 import type { Service } from "../data/services";
 import { getEquipmentByTypes } from "../data/equipment.service";
 import type { Equipment } from "../data/types";
+import { trackPhoneClick } from "../lib/analytics";
 
 export default function ServiceDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -19,6 +25,8 @@ export default function ServiceDetailPage() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loadingEquipment, setLoadingEquipment] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [showTowCalculator, setShowTowCalculator] = useState(false);
+  const [showMaterialDeliveryCalculator, setShowMaterialDeliveryCalculator] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -65,6 +73,11 @@ export default function ServiceDetailPage() {
   if (notFound) {
     return (
       <div className="flex min-h-screen flex-col bg-white font-sans">
+        <PageMeta
+          title="Послугу не знайдено"
+          description="Запитану послугу не знайдено."
+          noindex
+        />
         <Header />
         <MobileTabBar />
         <div className="flex flex-1 flex-col items-center justify-center gap-4 py-20">
@@ -98,34 +111,105 @@ export default function ServiceDetailPage() {
     );
   }
 
+  const isTowCalculator = service.pricingType === "tow_calculator";
+  const isMaterialDeliveryCalculator = service.pricingType === "material_delivery_calculator";
+  const openServiceAction = () => {
+    if (isTowCalculator) {
+      setShowTowCalculator(true);
+      return;
+    }
+    if (isMaterialDeliveryCalculator) {
+      setShowMaterialDeliveryCalculator(true);
+      return;
+    }
+
+    openOrderModal({ serviceName: service.title });
+  };
+
+  const actionLabel = isTowCalculator
+    ? "Розрахувати евакуацію"
+    : isMaterialDeliveryCalculator
+      ? "Розрахувати доставку"
+      : "Замовити послугу";
+  const secondaryActionLabel = isTowCalculator
+    ? "Відкрити калькулятор"
+    : isMaterialDeliveryCalculator
+      ? "Відкрити калькулятор"
+      : "Отримати розрахунок";
+  const seoImage = absoluteImageUrl(service.image);
+  const editorial = serviceEditorialContent[service.slug];
+  const canonical = absoluteSiteUrl(`/services/${service.slug}`);
+
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans">
       <Helmet>
         <title>{service.seoTitle}</title>
         <meta name="description" content={service.seoDescription} />
-        <link rel="canonical" href={`https://technorent.ua/services/${service.slug}`} />
+        <link rel="canonical" href={canonical} />
         <meta property="og:title" content={service.seoTitle} />
         <meta property="og:description" content={service.seoDescription} />
-        <meta property="og:url" content={`https://technorent.ua/services/${service.slug}`} />
-        <meta property="og:image" content={service.image} />
+        <meta property="og:url" content={canonical} />
+        <meta property="og:type" content="website" />
+        {seoImage && <meta property="og:image" content={seoImage} />}
+        <meta name="twitter:card" content={seoImage ? "summary_large_image" : "summary"} />
+        <meta name="twitter:title" content={service.seoTitle} />
+        <meta name="twitter:description" content={service.seoDescription} />
+        {seoImage && <meta name="twitter:image" content={seoImage} />}
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Service",
             name: service.title,
             description: service.seoDescription,
+            image: seoImage,
             provider: {
               "@type": "LocalBusiness",
               name: "TechnoRent",
-              url: "https://technorent.ua",
+              url: absoluteSiteUrl("/"),
             },
             areaServed: {
               "@type": "Place",
               name: "Львів та Львівська область",
             },
-            url: `https://technorent.ua/services/${service.slug}`,
+            url: canonical,
           })}
         </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Послуги",
+                item: absoluteSiteUrl("/services"),
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: service.title,
+                item: canonical,
+              },
+            ],
+          })}
+        </script>
+        {editorial && (
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: editorial.faqs.map((item) => ({
+                "@type": "Question",
+                name: item.question,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: item.answer,
+                },
+              })),
+            })}
+          </script>
+        )}
       </Helmet>
 
       <Header />
@@ -166,27 +250,39 @@ export default function ServiceDetailPage() {
             {service.shortDescription}
           </p>
           <button
-            onClick={() => openOrderModal()}
+            onClick={openServiceAction}
             className="mt-1 w-fit rounded-full bg-primary px-7 py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
           >
-            Замовити послугу
+            {actionLabel}
           </button>
         </div>
       </section>
 
-      {/* Description */}
-      <section className="w-full px-[120px] py-12 max-xl:px-8 max-md:px-4 max-md:py-8">
-        <div className="mx-auto max-w-3xl">
-          <h2 className="mb-4 text-[28px] font-bold text-dark max-md:text-xl">Про послугу</h2>
-          <p className="text-[15px] leading-relaxed text-dark-text">{service.fullDescription}</p>
-        </div>
-      </section>
+      {/* Main content: Description + Features | Price card */}
+      <section className="grid grid-cols-[1fr_380px] items-stretch gap-6 px-[120px] py-8 max-xl:px-8 max-lg:grid-cols-1 max-md:px-4 max-md:py-6">
+        {/* Left column */}
+        <div className="flex flex-col gap-6">
+          <div className="rounded-2xl border border-border bg-white p-6">
+            <h2 className="mb-4 text-[26px] font-bold text-dark max-md:text-xl">Про послугу</h2>
+            {!editorial && (
+              <p className="text-[15px] leading-relaxed text-dark-text">{service.fullDescription}</p>
+            )}
+            {editorial?.intro.map((paragraph) => (
+              <p key={paragraph} className="mt-3 text-[15px] leading-relaxed text-dark-text">
+                {paragraph}
+              </p>
+            ))}
+            {editorial?.relatedNote && (
+              <p className="mt-4 rounded-xl bg-light-bg p-4 text-[14px] leading-relaxed text-dark-text">
+                {editorial.relatedNote.text}{" "}
+                <Link className="font-semibold text-dark underline decoration-primary underline-offset-2" to={editorial.relatedNote.linkTo}>
+                  {editorial.relatedNote.linkLabel}
+                </Link>
+              </p>
+            )}
+          </div>
 
-      {/* Features + Price */}
-      <section className="w-full bg-light-bg px-[120px] py-12 max-xl:px-8 max-md:px-4 max-md:py-8">
-        <div className="mx-auto grid max-w-4xl grid-cols-2 gap-8 max-md:grid-cols-1">
-          {/* Features */}
-          <div>
+          <div className="rounded-2xl border border-border bg-white p-6">
             <h2 className="mb-4 text-[22px] font-bold text-dark">Що включено</h2>
             <ul className="flex flex-col gap-2.5">
               {service.features.map((f, i) => (
@@ -199,24 +295,96 @@ export default function ServiceDetailPage() {
               ))}
             </ul>
           </div>
+        </div>
 
-          {/* Price */}
-          <div className="flex flex-col gap-3 rounded-[14px] border border-border bg-white p-6">
-            <h2 className="text-[22px] font-bold text-dark">Вартість</h2>
-            <p className="text-[26px] font-bold text-primary max-md:text-xl">{service.priceInfo}</p>
-            <p className="text-[13px] text-dark-text">
-              Точна вартість залежить від обсягу робіт, типу техніки та тривалості.
-              Залиште заявку — менеджер розрахує вартість для вашого завдання.
-            </p>
+        {/* Right column: Price card */}
+        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-white p-6">
+          <h2 className="text-[22px] font-bold text-dark">Вартість</h2>
+          <p className="text-[24px] font-bold leading-snug text-primary">{service.priceInfo}</p>
+          <p className="text-[13px] leading-relaxed text-dark-text">
+            {isTowCalculator
+              ? "Вкажіть адресу завантаження та адресу доставки. Ми побудуємо маршрут і покажемо приблизну вартість евакуації."
+              : isMaterialDeliveryCalculator
+                ? "Оберіть матеріал, кількість і адресу доставки. Ми покажемо попередню вартість матеріалу та доставки."
+              : "Вартість залежить від обсягу робіт, техніки та тривалості. У заявці вкажіть деталі, щоб менеджер підготував розрахунок."}
+          </p>
+          <div className="mt-auto flex flex-col gap-3">
             <button
-              onClick={() => openOrderModal()}
-              className="mt-2 w-full rounded-full bg-primary py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
+              onClick={openServiceAction}
+              className="w-full rounded-full bg-primary py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
             >
-              Отримати розрахунок
+              {secondaryActionLabel}
             </button>
+            <a
+              href="tel:+380670000000"
+              onClick={() => trackPhoneClick({ placement: `service_detail:${service.slug}` })}
+              className="flex items-center justify-center gap-2 text-[13px] font-semibold text-dark-text transition-colors hover:text-dark"
+            >
+              📞 +380 (67) 000-00-00
+            </a>
           </div>
         </div>
       </section>
+
+      {editorial && (
+        <section className="w-full bg-light-bg px-[120px] py-12 max-xl:px-8 max-md:px-4 max-md:py-8">
+          <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 max-lg:grid-cols-1">
+            <div className="rounded-2xl bg-white p-6">
+              <h2 className="mb-4 text-[25px] font-bold text-dark max-md:text-xl">
+                Коли варто замовити цю послугу
+              </h2>
+              <ul className="flex flex-col gap-3">
+                {editorial.suitableFor.map((item) => (
+                  <li key={item} className="flex gap-3 text-[14px] leading-relaxed text-dark-text">
+                    <span aria-hidden="true" className="mt-1 text-primary">✓</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-2xl bg-white p-6">
+              <h2 className="mb-4 text-[25px] font-bold text-dark max-md:text-xl">
+                Як організовуємо роботу
+              </h2>
+              <ol className="flex flex-col gap-4">
+                {editorial.steps.map((step, index) => (
+                  <li key={step.title} className="flex gap-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-dark">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <p className="text-[14px] font-bold text-dark">{step.title}</p>
+                      <p className="mt-1 text-[13px] leading-relaxed text-dark-text">{step.text}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {editorial && (
+        <section className="w-full px-[120px] py-12 max-xl:px-8 max-md:px-4 max-md:py-8">
+          <h2 className="mb-6 text-center text-[28px] font-bold text-dark max-md:text-xl">
+            Поширені запитання
+          </h2>
+          <div className="mx-auto flex max-w-3xl flex-col gap-3">
+            {editorial.faqs.map((item) => (
+              <details key={item.question} className="group rounded-[14px] border border-border bg-white p-4">
+                <summary className="cursor-pointer list-none text-[15px] font-bold text-dark [&::-webkit-details-marker]:hidden">
+                  <span className="flex items-center justify-between gap-3">
+                    {item.question}
+                    <span className="shrink-0 text-primary transition-transform group-open:rotate-45">+</span>
+                  </span>
+                </summary>
+                <p className="mt-3 text-[14px] leading-relaxed text-dark-text">{item.answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Related equipment */}
       <section className="w-full px-[120px] py-12 max-xl:px-8 max-md:px-4 max-md:py-8">
@@ -224,7 +392,7 @@ export default function ServiceDetailPage() {
           Техніка для цієї послуги
         </h2>
         {loadingEquipment ? (
-          <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1">
+          <div className="grid grid-cols-[repeat(4,minmax(0,280px))] justify-center gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex flex-col gap-3 rounded-2xl border border-border p-4">
                 <Skeleton className="h-[180px] w-full !rounded-xl" />
@@ -234,7 +402,7 @@ export default function ServiceDetailPage() {
             ))}
           </div>
         ) : equipment.length > 0 ? (
-          <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1">
+          <div className="grid grid-cols-[repeat(4,minmax(0,280px))] justify-center gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-md:grid-cols-1">
             {equipment.map((eq) => (
               <EquipmentCard key={eq.id} item={eq} />
             ))}
@@ -252,7 +420,7 @@ export default function ServiceDetailPage() {
           <h2 className="mb-6 text-[28px] font-bold text-dark max-md:text-xl">
             Пов'язані послуги
           </h2>
-          <div className="grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-md:grid-cols-1">
+          <div className="grid grid-cols-[repeat(3,minmax(0,340px))] justify-center gap-5 max-lg:grid-cols-2 max-md:grid-cols-1">
             {relatedServices.map((s) => (
               <Link
                 key={s.slug}
@@ -285,19 +453,37 @@ export default function ServiceDetailPage() {
       <section className="w-full px-[120px] py-12 max-xl:px-8 max-md:px-4 max-md:py-8">
         <div className="mx-auto max-w-2xl rounded-[18px] bg-dark p-10 text-center max-md:p-6">
           <h2 className="text-[28px] font-bold text-white max-md:text-xl">
-            Потрібна консультація?
+            Потрібна ця послуга?
           </h2>
           <p className="mt-2 text-sm font-medium text-gray-300">
-            Залиште заявку — менеджер зв'яжеться з вами, допоможе обрати техніку та розрахує вартість
+            Опишіть роботу й залиште номер телефону. Менеджер уточнить техніку, дату та вартість.
           </p>
           <button
-            onClick={() => openOrderModal()}
+            onClick={openServiceAction}
             className="mt-5 rounded-full bg-primary px-8 py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
           >
-            Залишити заявку
+            {isTowCalculator || isMaterialDeliveryCalculator ? "Розрахувати вартість" : "Залишити заявку"}
           </button>
         </div>
       </section>
+
+      {showTowCalculator && (
+        <TowCalculatorModal
+          serviceSlug={service.slug}
+          serviceName={service.title}
+          priceInfo={service.priceInfo}
+          deliveryRatePerKm={service.deliveryRatePerKm}
+          onClose={() => setShowTowCalculator(false)}
+        />
+      )}
+
+      {showMaterialDeliveryCalculator && (
+        <MaterialDeliveryCalculatorModal
+          serviceSlug={service.slug}
+          serviceName={service.title}
+          onClose={() => setShowMaterialDeliveryCalculator(false)}
+        />
+      )}
 
       <Footer />
     </div>

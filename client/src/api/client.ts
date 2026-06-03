@@ -1,16 +1,37 @@
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
+interface ApiFetchOptions extends RequestInit {
+  redirectOnUnauthorized?: boolean;
+}
+
+export class ApiError extends Error {
+  status: number;
+  body: unknown;
+
+  constructor(message: string, status: number, body: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.body = body;
+  }
+}
+
 export async function apiFetch<T>(
   endpoint: string,
-  options?: RequestInit
+  options?: ApiFetchOptions
 ): Promise<T> {
+  const { redirectOnUnauthorized, ...requestOptions } = options ?? {};
+  const shouldRedirectOnUnauthorized =
+    redirectOnUnauthorized ?? window.location.pathname.startsWith("/admin");
+
   const res = await fetch(`${API_BASE}${endpoint}`, {
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...getAuthHeaders(),
-      ...options?.headers,
+      ...requestOptions.headers,
     },
-    ...options,
+    ...requestOptions,
   });
 
   if (!res.ok) {
@@ -19,13 +40,13 @@ export async function apiFetch<T>(
     if (res.status === 401) {
       localStorage.removeItem("admin_token");
       localStorage.removeItem("admin_user");
-      if (window.location.pathname !== "/admin") {
+      if (shouldRedirectOnUnauthorized && window.location.pathname !== "/admin") {
         window.location.href = "/admin";
       }
-      throw new Error(body.error || "Невірний логін або пароль");
+      throw new ApiError(body.error || "Невірний логін або пароль", res.status, body);
     }
 
-    throw new Error(body.error || `HTTP ${res.status}`);
+    throw new ApiError(body.error || `HTTP ${res.status}`, res.status, body);
   }
 
   return res.json();

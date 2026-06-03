@@ -9,6 +9,8 @@ interface EquipmentCardProps {
 }
 
 export default function EquipmentCard({ item, maxWidth }: EquipmentCardProps) {
+  const typeLabel = equipmentTypeLabels[item.type] ?? item.type;
+
   return (
     <Link
       to={`/catalog/${item.slug}`}
@@ -18,7 +20,7 @@ export default function EquipmentCard({ item, maxWidth }: EquipmentCardProps) {
         {item.images[0]?.url && (
           <img
             src={item.images[0].url}
-            alt={`${item.name} — оренда ${equipmentTypeLabels[item.type]} у Львові`}
+            alt={`${item.name}, ${typeLabel} в оренду у Львові`}
             className="h-full w-full object-cover object-center"
             loading="lazy"
             width={400}
@@ -29,11 +31,11 @@ export default function EquipmentCard({ item, maxWidth }: EquipmentCardProps) {
       <div className="flex items-center gap-2">
         <h3 className="text-[22px] font-bold text-dark">{item.name}</h3>
         <span className="rounded-full bg-light-bg px-2.5 py-0.5 text-xs font-semibold text-dark-text">
-          {equipmentTypeLabels[item.type]}
+          {typeLabel}
         </span>
       </div>
       <p className="text-[15px] font-semibold text-dark-text">
-        {formatPrice(item.pricePerHour)}
+        {formatPrice(item.pricePerHour, item.pricingType)}
       </p>
       <span className="inline-flex w-fit items-center justify-center rounded-full bg-primary px-4 py-[11px] text-[13px] font-bold text-dark transition-opacity hover:opacity-90">
         Детальніше

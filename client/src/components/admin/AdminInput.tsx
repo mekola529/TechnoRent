@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import type { InputHTMLAttributes, SelectHTMLAttributes, ReactNode } from "react";
 
 const inputBase =
@@ -30,7 +31,10 @@ interface AdminTextareaProps
   label?: string;
 }
 
-export function AdminTextarea({ label, className = "", id, ...rest }: AdminTextareaProps) {
+export const AdminTextarea = forwardRef<HTMLTextAreaElement, AdminTextareaProps>(function AdminTextarea(
+  { label, className = "", id, ...rest },
+  ref,
+) {
   const inputId = id ?? label;
   return (
     <div className="flex flex-col gap-1.5">
@@ -41,12 +45,13 @@ export function AdminTextarea({ label, className = "", id, ...rest }: AdminTexta
       )}
       <textarea
         id={inputId}
+        ref={ref}
         className={`${inputBase} min-h-[80px] resize-y ${className}`}
         {...rest}
       />
     </div>
   );
-}
+});
 
 /* ── Select ────────────────────────────── */
 

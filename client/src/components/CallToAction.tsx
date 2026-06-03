@@ -1,13 +1,36 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createOrder } from "../data/equipment.service";
+import { getLeadAttributionPayload } from "../lib/attribution";
+import { pushAnalyticsEvent } from "../lib/analytics";
+import { useCustomerAccount } from "../context/useCustomerAccount";
+import { getCustomerContactPrefill, shouldPrefillPhone } from "../utils/customerPrefill";
 
 export default function CallToAction() {
+  const { customer } = useCustomerAccount();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+380");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [touched, setTouched] = useState(false);
+  const [trackedOpen, setTrackedOpen] = useState(false);
+
+  useEffect(() => {
+    if (!customer) return;
+
+    const prefill = getCustomerContactPrefill(customer);
+    setName((current) => (current.trim() ? current : prefill.name));
+    setPhone((current) => (shouldPrefillPhone(current) ? prefill.phone : current));
+  }, [customer]);
+
+  function trackOpen() {
+    if (trackedOpen) return;
+    setTrackedOpen(true);
+    pushAnalyticsEvent("form_open", {
+      form_type: "callback",
+      page_path: window.location.pathname,
+    });
+  }
 
   async function handleCallbackSubmit() {
     setTouched(true);
@@ -15,7 +38,23 @@ export default function CallToAction() {
     setSending(true);
     setError("");
     try {
-      await createOrder({ customerName: name, phone, comment: "Замовити дзвінок" });
+      const attribution = getLeadAttributionPayload();
+      const created = await createOrder({
+        customerName: name,
+        phone,
+        comment: "Замовити дзвінок",
+        requestType: "callback",
+        attribution,
+      });
+      pushAnalyticsEvent("lead_submit_success", {
+        lead_type: "callback",
+        request_id: created.id,
+        page_path: window.location.pathname,
+        utm_source: attribution.lastTouch?.utmSource,
+        utm_medium: attribution.lastTouch?.utmMedium,
+        utm_campaign: attribution.lastTouch?.utmCampaign,
+        tracking_code: attribution.lastTouch?.trackingCode,
+      });
       setSent(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Помилка надсилання");
@@ -29,11 +68,10 @@ export default function CallToAction() {
       {/* Ліва частина */}
       <div className="flex flex-1 flex-col gap-3">
         <h2 className="text-[42px] font-bold text-white max-lg:text-3xl">
-          Потрібна техніка для роботи?
+          Не знаєте, яка техніка потрібна?
         </h2>
         <p className="text-[17px] font-medium text-gray-100">
-          Залиште заявку і ми допоможемо швидко підібрати техніку для вашого
-          проєкту.
+          Опишіть роботу та залиште телефон. Менеджер уточнить деталі й запропонує машину.
         </p>
       </div>
 
@@ -55,6 +93,7 @@ export default function CallToAction() {
               type="text"
               placeholder="Введіть імʼя"
               value={name}
+              onFocus={trackOpen}
               onChange={(e) => setName(e.target.value)}
               className={`w-full max-w-full rounded-[10px] border bg-[#F9FAFB] px-3 py-3 text-base font-medium text-dark-text placeholder:text-[#98A2B3] outline-none focus:ring-2 focus:ring-primary md:text-[13px] ${touched && !name.trim() ? "border-red-400" : "border-border"}`}
             />
@@ -64,6 +103,7 @@ export default function CallToAction() {
               type="tel"
               placeholder="+380"
               value={phone}
+              onFocus={trackOpen}
               onChange={(e) => setPhone(e.target.value)}
               className={`w-full max-w-full rounded-[10px] border bg-[#F9FAFB] px-3 py-3 text-base font-medium text-dark-text placeholder:text-[#98A2B3] outline-none focus:ring-2 focus:ring-primary md:text-[13px] ${touched && phone.length < 10 ? "border-red-400" : "border-border"}`}
             />
@@ -74,6 +114,7 @@ export default function CallToAction() {
             <button
               type="button"
               onClick={handleCallbackSubmit}
+              onFocus={trackOpen}
               disabled={sending}
               className="w-full rounded-full bg-primary px-3.5 py-3 text-[13px] font-bold text-dark transition-opacity hover:opacity-90 disabled:opacity-60"
             >

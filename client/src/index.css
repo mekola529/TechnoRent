@@ -15,6 +15,143 @@ body {
   overflow-x: hidden;
 }
 
+.admin-layout-shell {
+  isolation: isolate;
+}
+
+.admin-mobile-topbar {
+  min-height: 56px;
+  padding-top: max(0.625rem, env(safe-area-inset-top));
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+.admin-mobile-menu-button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  pointer-events: auto;
+}
+
+/* Legacy browser fallback.
+   Tailwind v4 emits modern @layer/oklch/media syntax that old Chrome builds can
+   partially ignore, so critical brand colors are repeated here as plain CSS.
+   This keeps dark hero/CTA/footer text readable on older Chrome builds. */
+.bg-dark {
+  background-color: #111111;
+}
+
+.bg-primary {
+  background-color: #f2b705;
+}
+
+.bg-light-bg {
+  background-color: #f5f5f5;
+}
+
+.bg-white {
+  background-color: #ffffff;
+}
+
+.text-white {
+  color: #ffffff;
+}
+
+.text-primary {
+  color: #f2b705;
+}
+
+.text-dark {
+  color: #111111;
+}
+
+.text-dark-text {
+  color: #2b2b2b;
+}
+
+.text-gray-300 {
+  color: #d1d5db;
+}
+
+.border-border {
+  border-color: #eaeaea;
+}
+
+.border-white {
+  border-color: #ffffff;
+}
+
+.border-primary {
+  border-color: #f2b705;
+}
+
+.hover\:text-primary:hover {
+  color: #f2b705;
+}
+
+.hover\:text-white:hover {
+  color: #ffffff;
+}
+
+.hover\:bg-dark:hover {
+  background-color: #111111;
+}
+
+.hover\:bg-primary:hover {
+  background-color: #f2b705;
+}
+
+/* Contacts hero also gets layout fallbacks because it exposed the issue first. */
+.contacts-hero-legacy {
+  width: 100%;
+  background-color: #111111;
+  padding: 4rem 120px;
+}
+
+.contacts-hero-legacy__title {
+  color: #ffffff;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.contacts-hero-legacy__accent {
+  color: #f2b705;
+}
+
+.contacts-hero-legacy__subtitle {
+  margin-top: 0.75rem;
+  color: #d1d5db;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+@media (max-width: 1279px) {
+  .contacts-hero-legacy {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .contacts-hero-legacy__title {
+    font-size: 1.875rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .contacts-hero-legacy {
+    padding: 2.5rem 1rem;
+  }
+
+  .contacts-hero-legacy__title {
+    font-size: 1.5rem;
+  }
+
+  .contacts-hero-legacy__subtitle {
+    font-size: 0.875rem;
+  }
+}
+
 /* ── Safari input zoom fix: ensure 16px minimum ── */
 @media screen and (max-width: 767px) {
   input,
@@ -24,3 +161,21 @@ body {
   }
 }
 
+/* Keep Leaflet controls inside the admin map stacking context on mobile. */
+.admin-gps-map .leaflet-container {
+  z-index: 0;
+}
+
+.admin-gps-map .leaflet-pane {
+  z-index: 1;
+}
+
+.admin-gps-map .leaflet-control-container,
+.admin-gps-map .leaflet-top,
+.admin-gps-map .leaflet-bottom {
+  z-index: 2;
+}
+
+.admin-gps-map .leaflet-popup-pane {
+  z-index: 3;
+}

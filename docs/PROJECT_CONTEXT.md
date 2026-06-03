@@ -1,7 +1,143 @@
 # TechnoRent — Повний контекстний документ проєкту
 
-> **Дата створення:** 26 березня 2026  
+> **Дата створення:** 26 березня 2026
+> **Дата оновлення:** 24 квітня 2026
 > **Призначення:** головне джерело контексту для будь-якого нового технічного агента, який входить у проєкт
+
+---
+
+## 0. Останні оновлення
+
+- Розпочато CRM-редизайн, перший етап уже частково реалізовано:
+  - додано новий шар `CustomerRequest` / `CustomerRequestItem` для єдиної вкладки `Заявки`,
+  - публічні заявки на оренду і на послуги тепер паралельно пишуться і в legacy-таблиці, і в нову CRM-модель,
+  - в адмінці прибрано окрему вкладку заявок на послуги з навігації,
+  - сторінка `Заявки` тепер читає unified CRM-записи і показує всі звернення в одному списку,
+  - `RentOrder` вже вміє посилатись на `CustomerRequest`, що готує перехід `заявка -> замовлення` у новому CRM-контурі;
+  - додано окрему вкладку `Працівники` з двома блоками:
+    - підтверджені працівники,
+    - Telegram-кандидати після `/start`;
+  - додано мінімальний backend internal API для Telegram-кандидатів:
+    - `POST /api/internal/telegram/employee-candidates/start`;
+  - створено окрему папку `telegram-bot/`:
+    - webhook-сервер,
+    - обробка приватного `/start`,
+    - запис кандидата в backend через захищений internal token;
+  - реалізовано базовий dispatch-контур:
+    - `POST /api/admin/rent-orders/:id/assign`,
+    - відправка призначення працівнику через `backend -> bot`,
+    - callback `Прийняти / Відхилити`,
+    - запис відповіді в `WorkAssignment` і `OrderEventLog`;
+  - реалізовано наступний execution-контур для працівника:
+    - після прийняття завдання бот показує кнопку `Розпочати виконання`,
+    - після старту бот показує кнопку `Завершити виконання`,
+    - backend створює/оновлює `WorkExecutionSession`,
+    - при старті замовлення переходить у `ACTIVE`,
+    - при завершенні створюється `WorkExecutionReport`-заготовка і замовлення переходить у `WORKER_COMPLETED`,
+    - після фінішу автоматично запускається GPS-збагачення звіту за фактичний інтервал виконання,
+    - працівник після завершення проходить Telegram-анкету: готівка, додаткові витрати, проблеми, коментар,
+    - після завершення анкети менеджер отримує окреме Telegram-сповіщення про готовий підсумковий звіт,
+    - фінальне закриття замовлення до `COMPLETED` тепер виконує менеджер вручну з адмінки;
+  - в адмінці `Замовлення` показується поточна execution-сесія:
+    - статус,
+    - час початку,
+    - час завершення,
+    - прив’язана техніка,
+    - GPS-маячок та його остання адреса.
+  - реалізовано фінальне менеджерське закриття замовлення:
+    - `POST /api/admin/rent-orders/:id/close`,
+    - перевіряється, що execution завершено і worker questionnaire має статус `COMPLETED`,
+    - менеджер фіксує фінальні поля: погоджена ціна, готівка, витрати, коментар,
+    - замовлення переходить з `WORKER_COMPLETED` у `COMPLETED`;
+  - у картці замовлення додано журнал подій:
+    - призначення працівника,
+    - прийняття / відхилення,
+    - старт / фініш виконання,
+    - подання підсумкового звіту,
+    - фінальне закриття менеджером.
+  - сторінка `Огляд` переведена на новий CRM-контур:
+    - читає `CustomerRequest` через `/api/admin/requests`,
+    - читає `RentOrder` через `/api/admin/rent-orders`,
+    - показує KPI по нових заявках, активних замовленнях, завершених замовленнях за місяць і доходу за місяць,
+    - показує останні заявки та останні завершені замовлення замість legacy-списку.
+- Telegram-бот для працівників став терпимішим до реального вводу:
+  - приймає не тільки точне `/start`, а й `start`, `старт`, а також `/start` з параметрами;
+  - на будь-яке інше приватне повідомлення повертає коротку підказку замість повного ігнору.
+- Telegram-бот отримав стабільнішу callback-обробку:
+  - inline-кнопки `Прийняти`, `Відхилити`, `Розпочати`, `Завершити` одразу відповідають Telegram, щоб у клієнті не висіло нескінченне завантаження;
+  - запити бота до backend і Telegram API мають таймаути;
+  - діагностика webhook/callback пишеться в `telegram-bot.log` у корені проєкту.
+- Повідомлення працівнику після призначення і після прийняття завдання структуровані:
+  - показується номер замовлення, клієнт, телефон, дата/час початку, якщо задані;
+  - для евакуатора показуються дві точки `Звідки забрати` і `Куди доставити`;
+  - для оренди техніки або звичайної послуги показується одна адреса виконання;
+  - адреси є клікабельними HTML-посиланнями на Google Maps по координатах, а не по тексту адреси;
+  - менеджер може додати окремий коментар для працівника під час призначення.
+- GPS-синхронізація для евакуатора переведена на `gps.equgps.com`; Telegram як джерело GPS лишився тільки як legacy-контур.
+- Додано збереження денної GPS-статистики з `EquGPS`:
+  - основний `sync-tracker-from-equgps.js` тепер при кожному запуску оновлює сьогоднішній і попередній день,
+  - стоянки за ці дні замінюються актуальним звітом з EquGPS, а не накопичуються,
+  - денний пробіг у км,
+  - час руху за день,
+  - мотогодини,
+  - список поїздок у `rawPayload`,
+  - збереження по кожному пристрою окремо.
+- У адмінці додано окрему вкладку `Мапа` з `Leaflet/OpenStreetMap`.
+- Вкладка `Мапа` має ручну кнопку синхронізації GPS, яка викликає `POST /api/admin/gps/sync`.
+- Публічні поля адреси використовують `AddressAutocompleteInput`:
+  - підказки стартують після мінімальної кількості символів і debounce;
+  - Львівська область пріоритизується в пошуку;
+  - після вибору адреси або переходу в інший input dropdown закривається і не повторює вже вибрану адресу.
+- Типи техніки більше не є enum-ключами на кшталт `excavator`:
+  - вони зберігаються як звичайний текст,
+  - нормалізуються та зберігаються українською,
+  - можуть створюватись із форми техніки,
+  - підтягуватись у форму послуг.
+- Додано вкладку `Сповіщення` в адмінці:
+  - route `/admin/notifications`,
+  - backend API `/api/admin/notifications/templates`,
+  - registry дефолтних Telegram-шаблонів у `server/src/lib/notification-templates.ts`,
+  - whitelist-змінні і preview через `notification-renderer`,
+  - service-specific overrides через `NotificationTemplate.serviceSlug`,
+  - заповнені дефолти для евакуатора, доставки сипучих матеріалів і вивозу будівельного сміття,
+  - фінальне закриття замовлення підключене до шаблону `order_closed_manager`,
+  - inline-кнопки worker flow лишаються системними, через UI редагується тільки текст.
+- Оновлено публічний контур послуг і техніки:
+  - на головній додано блок популярних послуг;
+  - у послуги додано прапорець `isPopular`;
+  - у техніки додано `pricingType`, щоб вона могла відкривати ті самі калькулятори, що й послуги;
+  - для техніки з `pricingType = tow_calculator` кнопка відкриває калькулятор евакуатора і має текст `Замовити евакуацію`.
+- Додано паливний контур для CRM:
+  - у техніці можна задати середній розхід пального `л / 100 км` і `л / мотогодину`;
+  - у фінансах закупівлю пального можна зберігати без прив’язки до конкретної техніки;
+  - після завершення execution GPS-звіт дає пробіг/мотогодини, а система створює `OrderExpense` типу `fuel` із джерелом `system`;
+  - ціна за літр береться з останньої закупівлі пального в `EquipmentExpense`.
+  - загальний баланс пального рахується як закуплені літри мінус системно списані літри;
+  - якщо працівник у Telegram-анкеті вказує додаткову витрату типу `fuel`, вона зберігається як загальна закупівля пального в `EquipmentExpense` без прив’язки до техніки;
+  - у замовленні така покупка йде окремим типом `fuel_purchase`: вона не входить у витрати замовлення і прибуток замовлення, але враховується у стані розрахунку з працівником;
+  - якщо GPS не передав пробіг або мотогодини, менеджер може вручну вказати ці показники у звіті замовлення і перерахувати системну паливну витрату;
+  - поріг попередження про низький залишок задається через `FUEL_LOW_BALANCE_LITERS`, дефолт `50`.
+- Додано керування hero-зображенням головної:
+  - таблиця `SiteSetting`;
+  - публічний API `/api/settings/homepage`;
+  - адмін API `/api/admin/settings/homepage`;
+  - вкладка `Налаштування` в адмінці.
+- Адмін-навігація згрупована в блоки: довідники, операційний CRM, GPS, системні налаштування.
+- SEO-контур оновлено:
+  - `PageMeta` підтримує `og:image` і Twitter Card;
+  - детальні сторінки техніки/послуг мають абсолютні зображення для OG і JSON-LD;
+  - `/sitemap.xml` і `/api/sitemap.xml` генеруються динамічно;
+  - `robots.txt` вказує на `/sitemap.xml`;
+  - legacy `/vyviz-smittia` має canonical на актуальну сторінку послуги.
+- Telegram worker bot підготовлено до запуску як окремий cPanel Node.js app:
+  - додано `telegram-bot/start.cjs`;
+  - bot слухає `process.env.PORT` у production;
+  - env читається і з root app, і з монорепо;
+  - додано інструкцію [`TELEGRAM_BOT_CPANEL_DEPLOY.md`](./TELEGRAM_BOT_CPANEL_DEPLOY.md).
+- В auth-вузлі виправлено дві проблеми:
+  - rate-limit більше не блокує `/api/auth/me`, він висить лише на `POST /api/auth/login`;
+  - публічна частина сайту не повинна редиректити на `/admin` лише через прострочений `admin_token`.
+- Уся документація перенесена в папку [`docs/`](./README.md).
 
 ---
 
@@ -16,7 +152,8 @@ TechnoRent — веб-сайт компанії з оренди будівель
 - Клієнт заходить на сайт → переглядає каталог техніки → залишає заявку (ім'я + телефон)
 - Адміністратор отримує заявку через Telegram-бот + бачить її в адмін-панелі
 - Адміністратор обробляє заявку → створює замовлення → техніка бронюється в календарі зайнятості
-- Додатковий сервіс: вивіз будівельного сміття (окрема форма)
+- Додаткові послуги: вивіз сміття, земляні роботи, копання траншей, послуги евакуатора тощо (11 послуг з CRUD в адмінці)
+- Для евакуатора реалізовано GPS-відстеження через EquGPS API, окремі адмін-вкладки `GPS` і `Мапа`, а також публічний калькулятор орієнтовної вартості евакуації
 
 ### Ролі користувачів
 
@@ -56,8 +193,8 @@ TechnoRent — веб-сайт компанії з оренди будівель
 | Технологія | Версія | Призначення |
 |-----------|--------|-------------|
 | Express | 5.1.0 | HTTP-сервер |
-| Prisma | 6.9.0+ | ORM для PostgreSQL |
-| PostgreSQL | 16 | База даних |
+| pg (node-postgres) | 8.13.0 | PostgreSQL драйвер (raw SQL) |
+| PostgreSQL | будь-яка (сумісність з < 13) | База даних |
 | TypeScript | ~5.9.3 | Типізація |
 | Zod | 3.25+ | Валідація запитів |
 | JWT (jsonwebtoken) | 9.0.2 | Аутентифікація адмінів |
@@ -66,22 +203,64 @@ TechnoRent — веб-сайт компанії з оренди будівель
 | Sharp | 0.34.5 | Компресія зображень → WebP |
 | Helmet | 8.1.0 | Security headers |
 | express-rate-limit | 8.3.1 | Rate limiting |
+| EquGPS Platform API | external | Актуальні GPS-позиції, денна статистика, поїздки і стоянки через `gps.equgps.com` |
+
+> **Примітка:** Проєкт було мігровано з Prisma ORM на raw SQL (pg) у квітні 2026 через несумісність Prisma native engine з CloudLinux на shared хостингу (cPanel). Всі runtime-запити — чистий SQL через `pool.query()`. Prisma-файли ще можуть лишатися в репозиторії як legacy-артефакти, але вони не є джерелом фактичної поведінки бекенду.
 
 ### Інфраструктура
 
 | Що | Де |
 |----|----|
-| Frontend hosting | **Vercel** (repo `techno_rent_vercel`, remote `vercel`) |
-| Backend hosting | **Render** (repo `TechnoRent`, remote `origin`) |
-| Database | PostgreSQL на Render |
+| Хостинг (frontend + backend) | **cPanel** на HostPro (Linux Pro, CloudLinux, Phusion Passenger) |
+| Node.js | v20.20.0 (cPanel Node.js Selector) |
+| Database | PostgreSQL на cPanel (`xkiavukt_technorent`) |
 | Telegram сповіщення | Telegram Bot API |
-| Домен продакшну | `https://technorentvercel.vercel.app` |
-| API продакшну | `https://techno-rent-vercel.onrender.com/api` |
+| Домен продакшну / клієнт | `https://technorent.lanbox.com.ua` |
+| API продакшну | `https://technorent.lanbox.com.ua/api` |
 
-### Команда деплою
+> **Примітка:** Фронтенд і бекенд деплояться разом на один хостинг. Express роздає статичні файли клієнта в production mode.
 
+### Деплой на cPanel
+
+CPanel username: `xkiavukt`, home dir: `/home/xkiavukt/`
+
+**Структура на сервері:**
+```
+technorent.lanbox.com.ua/
+├── server/
+│   ├── dist/          # Скомпільований JS (TypeScript → JS)
+│   │   └── start.cjs  # CJS entry point для Passenger
+│   ├── node_modules/  # Тільки production залежності
+│   ├── package.json
+├── client_dist/       # React build (index.html, assets/)
+├── .env               # Production environment variables
+└── uploads/           # Завантажені зображення
+```
+
+**Startup file (cPanel Node.js Selector):** `server/dist/start.cjs`
+
+**start.cjs** — CJS-обгортка, яка імпортує ESM entry point:
+```js
+import('./index.js');
+```
+
+**Процес деплою:**
+1. Локально: `cd server && npx tsc` (білд сервера)
+2. Локально: `cd client && npm run build` (білд фронтенду)
+3. Зібрати ZIP: `server/dist/`, `server/node_modules/`, `server/package.json`, `client_dist/`, `uploads/`, `docs/`
+4. Завантажити ZIP в cPanel File Manager → розпакувати
+5. Перезапустити Node.js додаток в cPanel
+
+**Production .env:**
 ```bash
-git push origin main && git push vercel main
+NODE_ENV=production
+DATABASE_URL=postgresql://xkiavukt_mykola:***@localhost:5432/xkiavukt_technorent
+JWT_SECRET=...
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_CHAT_ID=...
+CLIENT_URL=https://technorent.lanbox.com.ua
+SITE_URL=https://technorent.lanbox.com.ua
+PORT=3001
 ```
 
 ---
@@ -102,7 +281,8 @@ TechnoRent/
 │   │   │   └── OrderModalContext.tsx # Глобальний стан модалки замовлення
 │   │   ├── data/
 │   │   │   ├── types.ts            # TypeScript типи: Equipment, BookedPeriod, EquipmentType
-│   │   │   └── equipment.service.ts # API-функції: getAllEquipment, createOrder тощо
+│   │   │   ├── equipment.service.ts # API-функції: getAllEquipment, createOrder тощо
+│   │   │   └── services.ts         # API-функції послуг + tow calculator state
 │   │   ├── components/
 │   │   │   ├── Header.tsx           # Шапка сайту (лого, навігація, кнопка замовлення)
 │   │   │   ├── Footer.tsx           # Підвал (контакти, навігація, графік)
@@ -113,6 +293,8 @@ TechnoRent/
 │   │   │   ├── CallToAction.tsx     # Форма "Замовити дзвінок" (CTA)
 │   │   │   ├── EquipmentCard.tsx    # Картка техніки (для каталогу і популярних)
 │   │   │   ├── OrderModal.tsx       # Модальне вікно замовлення (createPortal)
+│   │   │   ├── AddressAutocompleteInput.tsx # Reusable input для пошуку адрес
+│   │   │   ├── TowCalculatorModal.tsx # Окремий калькулятор евакуатора (OSM/OSRM + GPS)
 │   │   │   ├── MobileTabBar.tsx     # Мобільна навігація (sticky під Header)
 │   │   │   ├── PageMeta.tsx         # SEO обгортка (title, description, og, canonical)
 │   │   │   ├── Skeleton.tsx         # Skeleton loaders (base + catalog + admin table)
@@ -137,11 +319,13 @@ TechnoRent/
 │   │       ├── NotFoundPage.tsx     # 404
 │   │       ├── AdminLoginPage.tsx   # Логін адміна
 │   │       ├── AdminOverviewPage.tsx # Дашборд (KPI, останні заявки)
-│   │       ├── AdminEquipmentPage.tsx # CRUD техніки
+│   │       ├── AdminEquipmentPage.tsx # CRUD техніки + прив'язка GPS-маячка
 │   │       ├── AdminOrdersPage.tsx  # Список заявок + деталі
 │   │       ├── AdminRentOrdersPage.tsx # Замовлення (оренди) + items
 │   │       ├── AdminServiceRequestsPage.tsx # Заявки на послуги
-│   │       └── AdminOccupancyPage.tsx # Календар зайнятості
+│   │       ├── AdminOccupancyPage.tsx # Календар зайнятості
+│   │       ├── AdminGpsPage.tsx     # GPS-пристрої, адреси, час останнього оновлення, прив'язана техніка
+│   │       └── AdminGpsMapPage.tsx  # Мапа активних GPS-трекерів + денна статистика
 │   ├── public/                      # Статичні файли (robots.txt тощо)
 │   ├── index.html                   # HTML shell
 │   ├── vercel.json                  # Vercel config (SPA rewrites)
@@ -149,19 +333,28 @@ TechnoRent/
 │   ├── tsconfig.json                # TypeScript config
 │   └── package.json                 # Залежності frontend
 │
-├── server/                          # Backend (Express + Prisma)
+├── server/                          # Backend (Express + pg)
 │   ├── src/
-│   │   ├── index.ts                 # Entry point: Express app, middleware, маршрути
+│   │   ├── index.ts                 # Entry point: Express app, middleware, маршрути, static serve
 │   │   ├── lib/
-│   │   │   ├── prisma.ts           # Prisma client instance
+│   │   │   ├── db.ts               # pg Pool singleton (connectionString з DATABASE_URL)
+│   │   │   ├── schema.ts           # SQL DDL: створення всіх таблиць, енумів, індексів при старті
+│   │   │   ├── auto-seed.ts        # Auto-seed: 6 одиниць техніки, 10 послуг, адмін
 │   │   │   ├── logger.ts           # Безпечне логування (production vs dev)
-│   │   │   └── telegram.ts         # Telegram Bot API: сповіщення про заявки
+│   │   │   ├── telegram.ts         # Telegram Bot API: сповіщення про заявки
+│   │   │   ├── notification-templates.ts # Registry Telegram-шаблонів і whitelist змінних
+│   │   │   ├── notification-service.ts # БД-шаблони, service overrides, reset, preview, fallback
+│   │   │   ├── notification-renderer.ts # Підстановка змінних у шаблони
+│   │   │   ├── tracker.ts          # Парсер legacy GPS-повідомлень від Telegram-бота
+│   │   │   ├── tracker.repository.ts # SQL-збереження TrackerDevice/TrackerMessage
+│   │   │   └── telegram-tracker-client.ts # legacy gramJS client
 │   │   ├── middleware/
 │   │   │   ├── auth.ts             # JWT auth middleware (Bearer token)
 │   │   │   └── validate.ts         # Zod validation middleware
 │   │   └── routes/
 │   │       ├── equipment.ts         # GET /api/equipment (публічний)
 │   │       ├── orders.ts            # POST /api/orders (публічний)
+│   │       ├── services.ts          # GET /api/services (публічний)
 │   │       ├── service-requests.ts  # POST /api/service-requests (публічний)
 │   │       ├── auth.ts              # POST /api/auth/login, GET /api/auth/me
 │   │       ├── admin.equipment.ts   # CRUD /api/admin/equipment (захищений)
@@ -169,13 +362,20 @@ TechnoRent/
 │   │       ├── admin.rent-orders.ts # /api/admin/rent-orders (захищений)
 │   │       ├── admin.occupancy.ts   # /api/admin/occupancy (захищений)
 │   │       ├── admin.upload.ts      # POST /api/admin/upload (захищений)
-│   │       └── admin.service-requests.ts # /api/admin/service-requests (захищений)
-│   ├── prisma/
-│   │   ├── schema.prisma            # Схема БД (моделі, enums, зв'язки)
-│   │   ├── seed.ts                  # Seed: початкова техніка + адмін
-│   │   └── migrations/              # Prisma migrations
+│   │       ├── admin.services.ts    # CRUD /api/admin/services (захищений)
+│   │       ├── admin.service-requests.ts # /api/admin/service-requests (захищений)
+│   │       ├── admin.notifications.ts # /api/admin/notifications (захищений)
+│   │       └── admin.gps.ts         # /api/admin/gps (захищений)
+│   ├── src/scripts/
+│   │   ├── init-telegram-session.ts # Legacy utility для старого Telegram sync
+│   │   ├── sync-tracker-from-equgps.ts # Основна синхронізація GPS із EquGPS API
+│   │   ├── sync-tracker-daily-stats-from-equgps.ts # Денна статистика пробігу/часу руху з EquGPS
+│   │   └── sync-tracker-locations.ts # Legacy sync із Telegram
+│   ├── dist/
+│   │   ├── start.cjs                # CJS entry point для Phusion Passenger
+│   │   └── ...                      # Скомпільований JS
 │   ├── tsconfig.json                # TypeScript config
-│   └── package.json                 # Залежності backend
+│   └── package.json                 # Залежності backend (pg, НЕ prisma)
 │
 ├── uploads/                         # Завантажені зображення техніки (WebP)
 ├── .env                             # Змінні середовища (НЕ в git)
@@ -202,6 +402,14 @@ SITE_URL="https://technorent.ua"    # Для sitemap
 NODE_ENV="development"
 TELEGRAM_BOT_TOKEN="..."     # Telegram Bot для сповіщень
 TELEGRAM_CHAT_ID="..."       # Chat ID для сповіщень
+TELEGRAM_INTERNAL_TOKEN="..." # Shared secret між backend і telegram-bot
+TELEGRAM_BOT_INTERNAL_URL="http://127.0.0.1:3011/internal" # backend -> bot
+TELEGRAM_BOT_PORT=3011
+TELEGRAM_BOT_WEBHOOK_SECRET="..." # Telegram webhook secret token
+BACKEND_INTERNAL_URL="http://127.0.0.1:3001/api/internal/telegram" # bot -> backend
+EQUGPS_PLATFORM_URL="https://gps.equgps.com"
+EQUGPS_EMAIL="..."
+EQUGPS_PASSWORD="..."
 
 # ─── Клієнтська (публічна) ─────────────────
 VITE_API_URL="https://..."   # URL API для фронтенду (потрапляє в bundle!)
@@ -217,10 +425,11 @@ VITE_API_URL="https://..."   # URL API для фронтенду (потрапл
 
 | Маршрут | Файл | Призначення |
 |---------|------|-------------|
-| `/` | `HomePage.tsx` | Головна з Hero, популярною технікою, FAQ |
+| `/` | `HomePage.tsx` | Головна з Hero, популярною технікою, популярними послугами, FAQ |
 | `/catalog` | `CatalogPage.tsx` | Каталог з фільтрами (тип, бренд, сортування) |
 | `/catalog/:slug` | `EquipmentDetailPage.tsx` | Деталі техніки + календар зайнятості |
-| `/services` | `ServicesPage.tsx` | Перелік послуг оренди |
+| `/services` | `ServicesPage.tsx` | Каталог послуг (з API, isActive фільтр) |
+| `/services/:slug` | `ServiceDetailPage.tsx` | Деталі послуги (features, пов'язана техніка) |
 | `/vyviz-smittia` | `DebrisRemovalPage.tsx` | Лендінг вивозу сміття + форма заявки |
 | `/contacts` | `ContactsPage.tsx` | Контакти + Google Maps |
 | `/admin` | `AdminLoginPage.tsx` | Вхід в адмін-панель |
@@ -234,10 +443,15 @@ VITE_API_URL="https://..."   # URL API для фронтенду (потрапл
 |---------|------|-------------|
 | `/admin/overview` | `AdminOverviewPage.tsx` | Дашборд: KPI, останні заявки, швидкі дії |
 | `/admin/equipment` | `AdminEquipmentPage.tsx` | CRUD техніки (таблиця + форма) |
-| `/admin/orders` | `AdminOrdersPage.tsx` | Заявки (список + деталі + зміна статусу) |
+| `/admin/orders` | `AdminOrdersPage.tsx` | Єдина вкладка заявок із CRM-шару `CustomerRequest` |
 | `/admin/rent-orders` | `AdminRentOrdersPage.tsx` | Замовлення оренди (multi-item) |
-| `/admin/service-requests` | `AdminServiceRequestsPage.tsx` | Заявки на послуги (вивіз сміття) |
+| `/admin/employees` | `AdminEmployeesPage.tsx` | Працівники і Telegram-кандидати після `/start` |
 | `/admin/occupancy` | `AdminOccupancyPage.tsx` | Календар зайнятості техніки |
+| `/admin/services-manage` | `AdminServicesPage.tsx` | CRUD послуг (реордер, isActive, features) |
+| `/admin/gps` | `AdminGpsPage.tsx` | GPS-пристрої, адреси, актуальність сигналу, прив'язана техніка |
+| `/admin/gps-map` | `AdminGpsMapPage.tsx` | Мапа GPS-техніки, денна статистика, поїздки і стоянки |
+| `/admin/settings` | `AdminSettingsPage.tsx` | Налаштування головної сторінки, hero-зображення |
+| `/admin/notifications` | `AdminNotificationsPage.tsx` | Налаштування Telegram-шаблонів, preview, reset, service-specific тексти |
 
 ### API-ендпоїнти
 
@@ -251,14 +465,24 @@ VITE_API_URL="https://..."   # URL API для фронтенду (потрапл
 | GET | `/api/equipment/meta/types` | Унікальні типи техніки |
 | POST | `/api/orders` | Створити заявку + Telegram |
 | POST | `/api/service-requests` | Створити заявку на послугу + Telegram |
+| GET | `/api/services` | Список активних послуг (isActive, sortOrder, optional popular=true) |
+| GET | `/api/services/:slug/tow-calculator` | Публічний стан калькулятора евакуатора: GPS-локація прив'язаного евакуатора |
+| GET | `/api/services/:slug/material-delivery-options` | Дані для калькулятора сипучих матеріалів |
+| POST | `/api/services/:slug/material-delivery-calculate` | Розрахунок доставки сипучих матеріалів |
+| GET | `/api/services/:slug` | Послуга за slug (публічна, isActive) |
+| GET | `/api/services/by-equipment-type/:type` | Послуги за типом техніки |
+| GET | `/api/settings/homepage` | Публічні налаштування головної, hero-зображення |
 | POST | `/api/auth/login` | Логін адміна → JWT |
 | GET | `/api/auth/me` | Перевірка токена |
+| GET | `/sitemap.xml` | Динамічний sitemap |
 | GET | `/api/sitemap.xml` | Динамічний sitemap |
+| GET | `/robots.txt` | Robots із посиланням на sitemap |
 
 #### Захищені (Bearer token)
 
 | Метод | Шлях | Що робить |
 |-------|------|-----------|
+| GET | `/api/admin/equipment` | Список техніки з relations для адмінки |
 | POST | `/api/admin/equipment` | Створити техніку |
 | PUT | `/api/admin/equipment/:id` | Оновити техніку |
 | DELETE | `/api/admin/equipment/:id` | Видалити техніку (+ файли зображень) |
@@ -280,6 +504,18 @@ VITE_API_URL="https://..."   # URL API для фронтенду (потрапл
 | GET | `/api/admin/service-requests` | Список заявок на послуги |
 | PATCH | `/api/admin/service-requests/:id/status` | Змінити статус |
 | DELETE | `/api/admin/service-requests/:id` | Видалити |
+| GET | `/api/admin/services` | Список всіх послуг (вкл. неактивні) |
+| POST | `/api/admin/services` | Створити послугу |
+| PUT | `/api/admin/services/:id` | Оновити послугу |
+| DELETE | `/api/admin/services/:id` | Видалити послугу |
+| PUT | `/api/admin/services/:id/reorder` | Перемістити послугу (sortOrder) |
+| GET | `/api/admin/gps` | Список GPS-пристроїв + техніка, до якої вони прив'язані |
+| GET | `/api/admin/notifications/templates` | Список базових шаблонів сповіщень |
+| GET | `/api/admin/notifications/templates/:key?serviceSlug=:slug` | Деталі базового або service-specific шаблону |
+| PUT | `/api/admin/notifications/templates/:key?serviceSlug=:slug` | Оновити базовий або service-specific шаблон |
+| POST | `/api/admin/notifications/templates/:key/reset?serviceSlug=:slug` | Reset базового або service-specific шаблону |
+| POST | `/api/admin/notifications/templates/:key/preview?serviceSlug=:slug` | Preview шаблону |
+| GET | `/api/health` | Health check (статус, DB, env info) |
 
 ---
 
@@ -291,14 +527,18 @@ VITE_API_URL="https://..."   # URL API для фронтенду (потрапл
 
 ```
 Equipment
-├── id           : String (cuid)
+├── id           : String (md5 UUID, auto-generated)
 ├── slug         : String (unique, URL-friendly)
 ├── name         : String ("JCB 3CX")
 ├── brand        : String ("JCB")
-├── type         : EquipmentType enum
+├── type         : String ("Екскаватор", "Евакуатор" тощо)
 ├── description  : String
+├── pricingType  : String ("hourly_from", "tow_calculator", "material_delivery_calculator" тощо)
 ├── pricePerHour : Int (грн/год)
 ├── isPopular    : Boolean
+├── baseAddress? : String
+├── baseLatitude?: Float
+├── baseLongitude?: Float
 ├── createdAt    : DateTime
 ├── updatedAt    : DateTime
 ├── specs[]      → EquipmentSpec (label + value)
@@ -308,9 +548,9 @@ Equipment
 └── rentOrderItems[] → RentOrderItem
 ```
 
-**EquipmentType enum:** `excavator`, `loader`, `bulldozer`, `crane`, `roller`, `dump_truck`, `concrete_mixer`, `generator`, `other`
+> **Оновлення 16.04.2026:** для техніки в адмінці можна прив'язувати GPS-маячок. У публічному каталозі ця прив'язка не показується, але використовується калькулятором евакуатора.
 
-> **Важливо:** В Prisma enum використовує underscore (`dump_truck`), на фронтенді — dash (`dump-truck`). Конвертація відбувається в `equipment.service.ts` через `mapApiType()` / `unmapType()`.
+**Тип техніки:** зберігається як звичайний український текст, а не enum. Нові типи можна додавати з форми техніки і повторно використовувати у послугах.
 
 ### Order (Заявка)
 
@@ -318,7 +558,7 @@ Equipment
 
 ```
 Order
-├── id           : String (cuid)
+├── id           : String (md5 UUID, auto-generated)
 ├── customerName : String
 ├── phone        : String
 ├── email?       : String
@@ -340,7 +580,7 @@ Order
 
 ```
 RentOrder
-├── id              : String (cuid)
+├── id              : String (md5 UUID, auto-generated)
 ├── customerName    : String
 ├── customerPhone   : String
 ├── status          : RentOrderStatus enum (default: NEW)
@@ -361,7 +601,7 @@ RentOrder
 
 ```
 ServiceRequest
-├── id           : String (cuid)
+├── id           : String (md5 UUID, auto-generated)
 ├── serviceType  : String ("debris_removal")
 ├── customerName : String
 ├── phone        : String
@@ -380,7 +620,7 @@ ServiceRequest
 
 ```
 BookedPeriod
-├── id           : String (cuid)
+├── id           : String (md5 UUID, auto-generated)
 ├── from         : DateTime
 ├── to           : DateTime
 ├── note?        : String (наприклад "[Оренда] Клієнт: Іванов")
@@ -398,7 +638,7 @@ BookedPeriod
 
 ```
 Admin
-├── id           : String (cuid)
+├── id           : String (md5 UUID, auto-generated)
 ├── email        : String (unique)
 ├── passwordHash : String (bcrypt)
 ├── role         : AdminRole enum (ADMIN | MANAGER)
@@ -411,7 +651,114 @@ Admin
 
 **RentOrderStatus:** `NEW` → `CONFIRMED` → `ACTIVE` → `COMPLETED` | `CANCELLED`
 
+**PricingType:** `fixed_from` | `hourly_from` | `calculator` | `tow_calculator` | `material_delivery_calculator` | `custom`
+
 > ACTIVE є тільки в RentOrder (означає «техніка зараз на об'єкті»).
+
+### Service (Послуга)
+
+Послуга будівельних робіт на замовлення.
+
+```
+Service
+├── id                    : String (md5 UUID, auto-generated)
+├── slug                  : String (unique, URL-friendly)
+├── title                 : String ("Копання траншей")
+├── shortDescription      : String (коротка для каталогу)
+├── fullDescription       : String (повна для деталей)
+├── image                 : String (URL зображення)
+├── priceInfo             : String ("від 1 200 грн/год")
+├── pricingType           : String ("fixed_from", "hourly_from", "tow_calculator", "material_delivery_calculator" тощо)
+├── deliveryRatePerKm     : Float? (тариф за км для калькуляторів)
+├── relatedEquipmentTypes : TEXT[] (масив типів техніки)
+├── features              : TEXT[] (масив переваг/особливостей)
+├── seoTitle              : String
+├── seoDescription        : String
+├── isActive              : Boolean (default: true)
+├── isPopular             : Boolean (default: false)
+├── sortOrder             : Int (порядок відображення)
+├── createdAt             : DateTime
+└── updatedAt             : DateTime
+```
+
+> **Важливо:** `relatedEquipmentTypes` зберігається як `TEXT[]` (не enum масив) для сумісності зі старішими версіями PostgreSQL та бібліотекою pg.
+
+**11 початкових послуг (auto-seed):** Вивіз будівельного сміття, Копання траншей, Риття котлованів, Планування ділянки, Демонтажні роботи, Завантаження та вивезення ґрунту, Перевезення сипучих матеріалів, Монтажні та підйомні роботи, Підготовка ділянки до будівництва, Земляні роботи, Послуги евакуатора.
+
+### TrackerDevice (GPS-маячок)
+
+Поточний стан GPS-пристрою, що прив'язується до техніки.
+
+```
+TrackerDevice
+├── id                    : String (md5 UUID, auto-generated)
+├── name                  : String (unique, напр. "Евакуатор Рено")
+├── equipmentId?          : String → Equipment (nullable, unique)
+├── lastAddress?          : String
+├── lastEventText?        : String
+├── lastTrackerAt?        : DateTime
+├── lastTelegramChatId?   : String
+├── lastTelegramMessageId?: String
+├── createdAt             : DateTime
+└── updatedAt             : DateTime
+```
+
+### TrackerMessage (історія GPS-повідомлень)
+
+Історія GPS-позицій. Назви полів `telegramChatId` і `telegramMessageId` залишились історично, але для EquGPS у них записуються службові значення `equgps:<deviceId>` і timestamp позиції.
+
+```
+TrackerMessage
+├── id                : String (md5 UUID, auto-generated)
+├── deviceId          : String → TrackerDevice
+├── telegramChatId    : String
+├── telegramMessageId : String
+├── rawText           : String
+├── eventText         : String
+├── parsedAddress?    : String
+├── effectiveAddress? : String
+├── trackerTimestamp? : DateTime
+└── createdAt         : DateTime
+```
+
+**Ключова логіка GPS:**
+- дані читаються напряму з `gps.equgps.com`
+- якщо нова позиція не містить адреси, використовується остання відома адреса цього ж пристрою
+- дублікати відсікаються по парі `telegramChatId + telegramMessageId`, де для EquGPS використовуються службові ключі `equgps:<deviceId>` + `fixTime`
+- один GPS-маячок може бути прив'язаний лише до однієї одиниці техніки
+- основна синхронізація запускається через `sync-tracker-from-equgps.js`
+- кожен запуск оновлює поточну позицію, денну статистику, поїздки і стоянки за сьогодні та попередній день
+- стоянки за синхронізовані дні спочатку видаляються і записуються заново з актуального звіту, щоб не залишались зайві старі записи
+
+### TrackerDailyStat (денна статистика GPS)
+
+Агреговані денні показники по кожному GPS-пристрою.
+
+```
+TrackerDailyStat
+├── id                : String (md5 UUID, auto-generated)
+├── trackerDeviceId?  : String → TrackerDevice
+├── source            : String ("equgps")
+├── sourceDeviceId    : String (зовнішній id пристрою в EquGPS)
+├── deviceName        : String
+├── statDate          : Date
+├── distanceKm        : Float
+├── drivingDurationMs : BigInt
+├── engineHoursMs?    : BigInt
+├── rawPayload?       : JSONB
+├── createdAt         : DateTime
+└── updatedAt         : DateTime
+```
+
+**Поточна логіка розрахунку:**
+- денний пробіг береться з `dataPositions.distance` у звіті `mode1` з `gps.equgps.com`;
+- час руху береться з `dataPositions.goTime`;
+- мотогодини беруться з `dataPositions.motoHours`, якщо поле доступне;
+- список поїздок зберігається в `rawPayload.dataGo`;
+- стоянки будуються з `dataGo`: завершення поїздки + `stopLongSeconds`;
+- якщо GPS-дані потрібні для виконання замовлення, `WorkExecutionReport` спершу бере прямий interval report з `gps.equgps.com`, а локальні `TrackerStop` і `TrackerDailyStat` використовуються як fallback.
+- після оновлення `WorkExecutionReport` система може автоматично створити системну витрату пального в `OrderExpense`, якщо для техніки задано норму розходу і є остання закупівельна ціна за літр.
+- у деталях замовлення менеджер може вручну задати `distanceKm` і `engineHours`, якщо GPS-джерело не повернуло потрібні дані; після збереження автоматична витрата пального оновлюється.
 
 ### Діаграма зв'язків
 
@@ -463,6 +810,29 @@ main.tsx
    - Expose: `openOrderModal(options?)`, `useOrderModal()` hook
 
 Решта стейту — **локальний стан в компонентах** (useState, useEffect).
+
+### Калькулятор евакуатора
+
+- Реалізований окремим компонентом `TowCalculatorModal.tsx`
+- Використовується тільки для послуг з `pricingType === "tow_calculator"`
+- Бере:
+  - тариф із `Service.priceInfo` (як ціна за 1 км)
+  - GPS-адресу евакуатора з `/api/services/:slug/tow-calculator`
+  - дві адреси від користувача: `звідки` і `куди`
+- Геокодування і маршрути:
+  - geocoding через Nominatim
+  - маршрут через OSRM
+- Адресні поля використовують `AddressAutocompleteInput`:
+  - підказки з `/api/address-search/suggest`;
+  - запит іде з debounce, а не після кожного символу;
+  - після вибору адреси список закривається і не відкривається повторно з тією ж адресою;
+  - при переході в інше поле dropdown також закривається.
+- Розрахунок включає:
+  - подачу евакуатора до клієнта
+  - евакуацію від точки завантаження до точки доставки
+  - орієнтовний час подачі
+  - орієнтовну вартість
+- Контактні поля (`ім'я`, `телефон`, `коментар`) навмисно приховані до натискання `Надіслати заявку`
 
 ### API-клієнт
 
@@ -528,9 +898,12 @@ Express app
 ├── Public API
 │   ├── /api/equipment → equipmentRouter
 │   ├── /api/orders → ordersRouter (rate limited)
+│   ├── /api/services → servicesRouter
 │   ├── /api/service-requests → serviceRequestsRouter (rate limited)
+│   ├── /api/settings → settingsRouter
 │   ├── /api/auth → authRouter (rate limited)
-│   └── /api/sitemap.xml (inline handler)
+│   ├── /sitemap.xml і /api/sitemap.xml (dynamic sitemap)
+│   └── /robots.txt
 │
 ├── Admin API (всі routes використовують authMiddleware всередині)
 │   ├── /api/admin/equipment → adminEquipmentRouter
@@ -538,10 +911,30 @@ Express app
 │   ├── /api/admin/rent-orders → adminRentOrdersRouter
 │   ├── /api/admin/occupancy → adminOccupancyRouter
 │   ├── /api/admin/upload → adminUploadRouter
+│   ├── /api/admin/services → adminServicesRouter
 │   └── /api/admin/service-requests → adminServiceRequestsRouter
 │
-└── Production SPA fallback (serve client/dist if exists)
+├── Production SPA fallback (NODE_ENV=production → serve client_dist/)
+│
+└── After listen: initSchema() → autoSeed()
 ```
+
+### DB Layer (pg)
+
+**Файл:** `server/src/lib/db.ts`
+```typescript
+import pg from "pg";
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+export { pool };
+```
+
+Всі запити до БД виконуються через `pool.query(sql, params)` з parameterized queries ($1, $2...). Ніякого ORM — чистий SQL.
+
+**Ініціалізація схеми:** `server/src/lib/schema.ts` — `initSchema()` виконує один великий SQL з `CREATE TABLE IF NOT EXISTS` для всіх 10 таблиць + enum types + indexes. Викликається при старті серверу.
+
+**ID генерація:** `DEFAULT md5(random()::text || clock_timestamp()::text)` — працює на будь-якій версії PostgreSQL без extensions.
+
+**Auto-seed:** `server/src/lib/auto-seed.ts` — перевіряє `COUNT(*)` Equipment та Service окремо, сіє відсутнє. Створює адміна, 6 одиниць техніки з specs/images, 10 послуг.
 
 ### Аутентифікація
 
@@ -563,10 +956,26 @@ Zod-схема парсить `req.body`, повертає 400 з деталям
 ### Telegram-сповіщення
 
 При створенні заявки (Order або ServiceRequest):
-- Формується HTML-повідомлення з деталями
+- Формується HTML-повідомлення з деталями через шаблон із `NotificationTemplate`
 - Надсилається через Telegram Bot API
 - **Асинхронно** (не блокує відповідь клієнту)
 - Якщо `TELEGRAM_BOT_TOKEN` або `TELEGRAM_CHAT_ID` не задані — тихо ігнорується
+
+Шаблони керуються з адмінки:
+- route: `/admin/notifications`;
+- API: `/api/admin/notifications/templates`;
+- базовий шаблон має `serviceSlug = NULL`;
+- service-specific override має `serviceSlug` конкретної послуги;
+- якщо override є — використовується він, якщо немає — fallback на базовий шаблон;
+- reset для послуги повертає системний service-specific дефолт, якщо він описаний у registry.
+
+Для працівників використовується окремий webhook-сервіс у `telegram-bot/`:
+- приватний `/start` створює або оновлює `EmployeeTelegramCandidate`;
+- backend викликає бота через internal endpoint, коли працівнику треба надіслати призначення;
+- працівник відповідає inline-кнопками `Прийняти`, `Відхилити`, `Розпочати виконання`, `Завершити виконання`;
+- після прийняття бот надсилає коротке підтвердження `Ви прийняли замовлення`, дату/час старту якщо задані, клікабельні точки Google Maps і кнопку старту;
+- callback-и відповідають Telegram одразу, а подальша backend-логіка виконується після цього;
+- локальна діагностика callback-ів пишеться в `telegram-bot.log`.
 
 ### Завантаження зображень
 
@@ -576,9 +985,12 @@ Zod-схема парсить `req.body`, повертає 400 з деталям
 3. Зберігає в `/uploads/` з UUID-імʼям
 4. Повертає `{ url: "/uploads/uuid.webp", alt: "" }`
 
-### Sitemap
+### Sitemap і robots
 
-`GET /api/sitemap.xml` — динамічно генерує XML sitemap з усією технікою з БД.
+- `GET /sitemap.xml` — основний динамічний XML sitemap.
+- `GET /api/sitemap.xml` — сумісний alias для старого шляху.
+- `GET /robots.txt` — robots-файл із забороною `/admin`, `/api/admin`, `/api/internal` і посиланням на `/sitemap.xml`.
+- Sitemap включає головну, каталог, послуги, контакти, всі активні послуги і всю техніку.
 
 ---
 
@@ -586,26 +998,27 @@ Zod-схема парсить `req.body`, повертає 400 з деталям
 
 ### HomePage
 
-**Маршрут:** `/`  
+**Маршрут:** `/`
 **Файл:** `client/src/pages/HomePage.tsx`
 
 **Секції (зверху вниз):**
 1. Header (sticky)
 2. MobileTabBar (mobile only)
-3. Hero (фоновий Unsplash, CTA кнопки)
+3. Hero (фонове зображення з `SiteSetting`, CTA кнопки)
 4. HowItWorks (3 кроки)
 5. PopularEquipment (дані з API, горизонтальний скрол на мобайлі)
-6. Banner вивозу сміття (посилання на `/vyviz-smittia`)
-7. WhyChooseUs (зображення + 4 переваги)
-8. CallToAction (форма "Замовити дзвінок")
-9. FAQ (4 питання, `<details>` елементи)
-10. Footer
+6. PopularServices (дані з API `popular=true`)
+7. Banner/CTA до послуг
+8. WhyChooseUs (зображення + 4 переваги)
+9. CallToAction (форма "Замовити дзвінок")
+10. FAQ (4 питання, `<details>` елементи)
+11. Footer
 
 **SEO:** LocalBusiness schema, FAQ schema, повні OG/Twitter мета-теги.
 
 ### CatalogPage
 
-**Маршрут:** `/catalog`  
+**Маршрут:** `/catalog`
 **Файл:** `client/src/pages/CatalogPage.tsx`
 
 **Функціональність:**
@@ -619,7 +1032,7 @@ Zod-схема парсить `req.body`, повертає 400 з деталям
 
 ### EquipmentDetailPage
 
-**Маршрут:** `/catalog/:slug`  
+**Маршрут:** `/catalog/:slug`
 **Файл:** `client/src/pages/EquipmentDetailPage.tsx`
 
 **Секції:**
@@ -633,9 +1046,11 @@ Zod-схема парсить `req.body`, повертає 400 з деталям
 
 **API:** `getEquipmentBySlug(slug)`
 
+Якщо `pricingType = "tow_calculator"`, кнопка має текст `Замовити евакуацію` і відкриває `TowCalculatorModal`. Для інших типів відкривається стандартна форма заявки.
+
 ### DebrisRemovalPage
 
-**Маршрут:** `/vyviz-smittia`  
+**Маршрут:** `/vyviz-smittia`
 **Файл:** `client/src/pages/DebrisRemovalPage.tsx`
 
 **Структура (лендігн-сторінка):**
@@ -781,7 +1196,7 @@ Barrel export з `components/admin/index.ts`:
 
 4. Backend: orders.ts
    → Zod validation
-   → prisma.order.create({ ... })
+   → pool.query('INSERT INTO "Order" ...')
    → sendTelegramNotification({ ... }) (async, non-blocking)
    → Response: { id, equipment?, ... }
 
@@ -805,7 +1220,8 @@ Barrel export з `components/admin/index.ts`:
 3. apiFetch("POST /admin/rent-orders", body)
 
 4. Backend: admin.rent-orders.ts
-   → prisma.rentOrder.create({ items: [...] })
+   → pool.query('INSERT INTO "RentOrder" ...')
+   → pool.query('INSERT INTO "RentOrderItem" ...') для кожного item
    → syncBookedPeriods() — автоматично створює BookedPeriod для кожного item
    → Якщо є sourceRequestId → оновлює статус Order → COMPLETED
 
@@ -869,17 +1285,19 @@ Barrel export з `components/admin/index.ts`:
 - Модальне вікно замовлення (OrderModal) з валідацією
 - Форма "Замовити дзвінок" (CallToAction) з валідацією
 - Лендінг вивозу будівельного сміття з формою заявки
+- **Каталог послуг** з публічними та адмін сторінками
+- Популярні послуги на головній сторінці
+- Калькулятор евакуатора для послуг і техніки з `pricingType = tow_calculator`
+- Калькулятор сипучих матеріалів для `pricingType = material_delivery_calculator`
+- Керування hero-зображенням головної через адмінку
 - Telegram-сповіщення при створенні заявок
-- Адмін-панель: login, dashboard, CRUD техніки, заявки, замовлення, послуги, зайнятість
+- Адмін-панель: login, dashboard, CRUD техніки, заявки, замовлення, **CRUD послуг**, постачання, зайнятість, GPS, мапа, налаштування, сповіщення
 - Shared UI-бібліотека для адмінки
 - Skeleton loaders на всіх сторінках
 - Responsive design (desktop → tablet → mobile)
-- Динамічний sitemap
-- Docker setup для розгортання
-
-### Що тимчасово вимкнено / закоментовано ⏸️
-
-- **Hero.tsx:** кнопка "Залишити заявку" і `useOrderModal` — закоментовані. Наразі тільки "Переглянути техніку" і "Вивіз сміття"
+- Динамічний sitemap (техніка + послуги)
+- Docker setup для локальної розробки
+- **Деплой на cPanel (HostPro)** — production працює на `technorent.lanbox.com.ua`
 
 ### Що потребує доробки 🔧
 
@@ -887,14 +1305,13 @@ Barrel export з `components/admin/index.ts`:
 - **RentOrder status ACTIVE:** не має чіткого тригера переходу (manually set)
 - **Контактні дані:** телефон +380 (67) 000-00-00 та email info@technorent.ua — заглушки, потрібно замінити на реальні
 - **Google Maps iframe** на ContactsPage — URL з прикладом Львова, потрібна точна адреса
-- **SEO:** `SITE_URL` встановлено як `https://technorent.ua`, але фактичний домен — `technorentvercel.vercel.app`
-- **Hero зображення:** використовується Unsplash URL — бажано замінити на власне фото
+- **Hero зображення:** керується через адмінку, але бажано завантажити власне production-фото замість зовнішнього fallback URL
 - **WhyChooseUs зображення:** зовнішній URL (`bf-logistic.ua`) — ненадійне джерело
 
 ### Відомі технічні особливості ⚠️
 
 - **createPortal + Tailwind v4:** Модалки рендеряться через `createPortal(… , document.body)`. Tailwind v4 `@theme` працює тільки всередині DOM-дерева, де підключено CSS. Тому overlay `bg-black/40` не працює в порталах — потрібен inline `style`. OrderModal вже виправлений, але ConfirmModal (адмін) може мати цю ж проблему (потрібно перевірити)
-- **Equipment type mapping:** Backend enum `dump_truck` ↔ Frontend string `dump-truck`. Конвертація в `equipment.service.ts`. При додаванні нових типів потрібно оновлювати обидва mapping'и
+- **Equipment pricing type:** техніка і послуги використовують однакові рядкові `pricingType`, backend-validated через Zod/SQL check, без Prisma runtime.
 
 ---
 
@@ -903,11 +1320,12 @@ Barrel export з `components/admin/index.ts`:
 ### Де структура хороша
 
 - Чіткий поділ client/server
-- Prisma schema добре нормалізована, з indexes
+- Чистий SQL з parameterized queries (захист від SQL injection)
 - Shared admin UI-компоненти (уникає дублювання)
 - Consistent pattern для admin pages (list → detail → form)
 - Zod-валідація на кожному ендпоїнті
 - Skeleton loaders забезпечують хороший UX
+- Auto-seed та schema init при старті (zero-migration deployment)
 
 ### Де є дублювання
 
@@ -918,7 +1336,7 @@ Barrel export з `components/admin/index.ts`:
 ### Тимчасові рішення
 
 - Телефон і email в Header/Footer — hardcoded заглушки
-- Hero/WhyChooseUs зображення з зовнішніх URL
+- Hero має зовнішній fallback URL, але production-зображення можна задати через `/admin/settings`
 - `ConfirmModal` використовує `bg-black/60` — може не працювати в Tailwind v4 через createPortal (не перевірено)
 - SEO canonical URLs вказують на `technorent.ua`, а не на фактичний домен
 
@@ -971,35 +1389,72 @@ AdminLayout (sidebar + content)
 
 ## 16. Деплой
 
-### Vercel (Frontend)
+### cPanel (HostPro — продакшн)
 
-- **Repo:** `techno_rent_vercel` (remote `vercel`)
-- **Config:** `client/vercel.json` — `.rewrites: source: "(.*)" → /index.html`
-- **Build:** `npm run build` → `dist/`
-- **Env:** `VITE_API_URL` = backend URL
+**Хостинг:** HostPro Linux Pro, CloudLinux, Phusion Passenger
+**cPanel username:** `xkiavukt`
+**Домен:** `technorent.lanbox.com.ua`
+**Node.js:** v20.20.0 (cPanel Node.js Selector)
+**Startup file:** `server/dist/start.cjs`
+**Application root:** `technorent.lanbox.com.ua`
 
-### Render (Backend)
+**Структура на сервері:**
+```
+/home/xkiavukt/technorent.lanbox.com.ua/
+├── server/
+│   ├── dist/           # Скомпільований JS
+│   │   └── start.cjs   # Entry point для Passenger
+│   ├── node_modules/   # Production залежності (pg, sharp, etc.)
+│   ├── package.json
+│   └── .env            # Production змінні (NODE_ENV=production)
+├── client_dist/        # React build (index.html, assets/)
+└── uploads/            # Завантажені зображення (persistent)
+```
 
-- **Repo:** `TechnoRent` (remote `origin`)
-- **Config:** Dockerfile (multi-stage build)
-- **Env:** DATABASE_URL, JWT_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD, CLIENT_URL, SITE_URL, PORT, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
-- **Start:** `npx prisma migrate deploy && npx prisma db seed && node dist/index.js`
-- **Uploads:** зберігаються на filesystem сервера (не persist across deploys на безкоштовному Render)
+**Процес деплою:**
+1. Локально: `cd server && npx tsc`
+2. Локально: `cd client && npm run build`
+3. Зібрати ZIP: server/dist/, server/node_modules/, server/package.json, server/.env, client/dist/ → client_dist/
+4. Завантажити ZIP → cPanel File Manager → розпакувати
+5. Перезапустити Node.js додаток
 
-### Важливо перед деплоєм
+**Database:** PostgreSQL на cPanel
+- DB: `xkiavukt_technorent`
+- User: `xkiavukt_mykola`
+- Host: `localhost:5432`
 
-1. `VITE_API_URL` на Vercel має вказувати на Render backend URL
-2. `CLIENT_URL` на Render має вказувати на Vercel frontend URL (для CORS)
-3. Database migration виконується автоматично при старті
-4. Seed виконується автоматично, але тільки якщо БД порожня
+**Env (production):**
+```bash
+NODE_ENV=production
+DATABASE_URL=postgresql://xkiavukt_mykola:***@localhost:5432/xkiavukt_technorent
+JWT_SECRET=...
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_CHAT_ID=...
+CLIENT_URL=https://technorent.lanbox.com.ua
+SITE_URL=https://technorent.lanbox.com.ua
+PORT=3001
+```
 
-### Docker (альтернативний деплой)
+**Особливості cPanel деплою:**
+- Phusion Passenger запускає start.cjs (CJS файл, який імпортує ESM index.js)
+- Express сам роздає статичні файли клієнта в production mode (шукає client/dist або client_dist)
+- Схема БД створюється автоматично при старті (initSchema → CREATE TABLE IF NOT EXISTS)
+- Auto-seed запускається при старті якщо таблиці порожні
+- Зображення зберігаються в uploads/ (persistent across deploys)
+- `gen_random_uuid()` не використовується — замінено на `md5(random()::text || clock_timestamp()::text)` для сумісності зі старішими PG
+- `relatedEquipmentTypes` у таблиці Service — `TEXT[]`, не enum масив (для сумісності з pg driver)
+
+### Docker (альтернативний деплой — для локальної розробки)
 
 ```bash
 docker-compose up -d
 ```
 
 Запускає PostgreSQL + server з усім необхідним.
+
+### Стара інфраструктура (більше не використовується)
+
+Раніше проєкт деплоївся на Render (backend) + Vercel (frontend) з Prisma ORM. Міграція на cPanel + pg відбулась у квітні 2026 через несумісність Prisma native engine з CloudLinux.
 
 ---
 
@@ -1018,13 +1473,14 @@ docker-compose up -d
 | Пріоритет | Файл | Чому |
 |-----------|------|------|
 | 🔴 1 | `client/src/App.tsx` | Всі маршрути |
-| 🔴 2 | `server/prisma/schema.prisma` | Вся модель даних |
+| 🔴 2 | `server/src/lib/schema.ts` | Вся модель даних (SQL DDL) |
 | 🔴 3 | `server/src/index.ts` | Всі API endpoints |
 | 🟡 4 | `client/src/api/client.ts` | Як фронтенд спілкується з бекендом |
 | 🟡 5 | `client/src/data/types.ts` | Типи фронтенду |
 | 🟡 6 | `client/src/data/equipment.service.ts` | API-сервісний шар |
 | 🟡 7 | `client/src/context/AuthContext.tsx` | Як працює аутентифікація |
-| 🟢 8 | `client/src/index.css` | Кольори і тема |
+| 🟡 8 | `server/src/lib/db.ts` | pg Pool (підключення до БД) |
+| 🟢 9 | `client/src/index.css` | Кольори і тема |
 
 ### Які частини найкритичніші
 
@@ -1037,8 +1493,8 @@ docker-compose up -d
 
 | Ризик | Що може зламатися |
 |-------|-------------------|
-| Зміна EquipmentType enum | Потрібно оновити: schema.prisma, types.ts, mapApiType(), unmapType(), equipmentTypeLabels |
-| Зміна OrderStatus/RentOrderStatus | Потрібно оновити: schema.prisma, Zod schemas, statusMap в кожній admin page, StatusBadge |
+| Зміна EquipmentType enum | Потрібно оновити: schema.ts, types.ts, mapApiType(), unmapType(), equipmentTypeLabels |
+| Зміна OrderStatus/RentOrderStatus | Потрібно оновити: schema.ts, Zod schemas, statusMap в кожній admin page, StatusBadge |
 | Зміна BookedPeriod логіки | Може зламати: calendar в AdminOccupancy + EquipmentDetail, RentOrder sync |
 | Зміна 401 handling в client.ts | Може зламати login flow або auto-logout |
 | Зміна createPortal behavior | Потрібно перевірити: overlay opacity, scroll lock, Tailwind v4 scope |
@@ -1094,21 +1550,27 @@ docker-compose up -d
 
 | # | Файл | Що в ньому | Коли звертатися |
 |---|------|-----------|----------------|
-| 1 | `server/prisma/schema.prisma` | Вся модель даних, enums, зв'язки | При будь-якій зміні даних |
+| 1 | `server/src/lib/schema.ts` | SQL DDL: таблиці, енуми, індекси | При будь-якій зміні даних |
 | 2 | `client/src/App.tsx` | Всі маршрути, провайдери | При додаванні сторінок |
-| 3 | `server/src/index.ts` | Всі API endpoints, middleware, sitemap | При зміні API |
-| 4 | `client/src/api/client.ts` | HTTP-клієнт, auth, 401 handling | При зміні автентифікації |
-| 5 | `client/src/data/equipment.service.ts` | API-функції, type mapping, URL resolution | При зміні Equipment API |
-| 6 | `client/src/data/types.ts` | Frontend типи Equipment | При зміні моделей |
-| 7 | `client/src/index.css` | Tailwind theme (кольори, шрифти) | При зміні дизайн-системи |
-| 8 | `server/src/routes/admin.rent-orders.ts` | Найскладніша бізнес-логіка | При зміні процесу оренди |
-| 9 | `client/src/pages/AdminEquipmentPage.tsx` | Найбільший UI файл (CRUD техніки) | При зміні форми техніки |
-| 10 | `client/src/components/OrderModal.tsx` | Глобальна модалка замовлення | При зміні форми замовлення |
-| 11 | `server/src/lib/telegram.ts` | Telegram сповіщення | При зміні формату повідомлень |
-| 12 | `client/src/components/AdminLayout.tsx` | Layout адмінки (sidebar) | При додаванні admin sections |
-| 13 | `.env.example` | Шаблон змінних середовища | При deployment |
-| 14 | `server/src/middleware/auth.ts` | JWT auth middleware | При зміні авторизації |
-| 15 | `client/src/context/AuthContext.tsx` | Frontend auth state | При зміні login flow |
+| 3 | `server/src/index.ts` | Всі API endpoints, middleware, sitemap, static serve | При зміні API |
+| 4 | `server/src/lib/db.ts` | pg Pool (підключення до БД) | При зміні конфігурації БД |
+| 5 | `server/src/lib/auto-seed.ts` | Auto-seed: техніка, послуги, адмін | При зміні початкових даних |
+| 6 | `client/src/api/client.ts` | HTTP-клієнт, auth, 401 handling | При зміні автентифікації |
+| 7 | `client/src/data/equipment.service.ts` | API-функції, type mapping, URL resolution | При зміні Equipment API |
+| 8 | `client/src/data/services.ts` | API-функції для послуг, ApiService → Service mapping | При зміні Services API |
+| 9 | `client/src/data/types.ts` | Frontend типи Equipment | При зміні моделей |
+| 10 | `client/src/index.css` | Tailwind theme (кольори, шрифти) | При зміні дизайн-системи |
+| 11 | `server/src/routes/admin.rent-orders.ts` | Найскладніша бізнес-логіка | При зміні процесу оренди |
+| 12 | `client/src/pages/AdminEquipmentPage.tsx` | Найбільший UI файл (CRUD техніки) | При зміні форми техніки |
+| 13 | `client/src/pages/AdminServicesPage.tsx` | CRUD послуг (features, reorder, isActive) | При зміні форми послуг |
+| 14 | `client/src/components/OrderModal.tsx` | Глобальна модалка замовлення | При зміні форми замовлення |
+| 15 | `server/src/lib/telegram.ts` | Telegram transport і відправка подій | При зміні каналів або fallback-відправки |
+| 16 | `server/src/lib/notification-templates.ts` | Registry шаблонів, service-specific дефолти, whitelist змінних | При зміні текстів сповіщень |
+| 17 | `server/src/lib/notification-service.ts` | БД-шаблони, overrides, reset, preview, fallback | При зміні логіки налаштувань сповіщень |
+| 18 | `client/src/pages/AdminNotificationsPage.tsx` | UI редагування сповіщень | При зміні адмінки сповіщень |
+| 19 | `client/src/components/AdminLayout.tsx` | Layout адмінки (sidebar) | При додаванні admin sections |
+| 20 | `server/src/middleware/auth.ts` | JWT auth middleware | При зміні авторизації |
+| 21 | `client/src/context/AuthContext.tsx` | Frontend auth state | При зміні login flow |
 
 ---
 
@@ -1131,12 +1593,10 @@ docker-compose up -d
 ## 21. Питання, які залишилися відкритими після аналізу коду
 
 1. **Реальні контактні дані:** Яку адресу, телефон і email потрібно вказати замість заглушок?
-2. **Домен:** Який буде фінальний домен? `technorent.ua` чи `technorentvercel.vercel.app`?
+2. **Домен:** Фінальний домен — `technorent.lanbox.com.ua` чи буде інший?
 3. **Ролевий контроль:** Які саме дії має мати MANAGER, що не має ADMIN? Або навпаки?
-4. **Persistence зображень:** Render free tier не зберігає файли між redeploys — чи потрібен S3/Cloudinary?
-5. **Кнопка "Залишити заявку" в Hero:** Чому закоментована? Тимчасово чи назавжди?
-6. **Оплата:** Чи планується інтеграція з платіжною системою?
-7. **Мультимовність:** Чи потрібна English версія або інші мови?
-8. **Аналітика:** Чи потрібен Google Analytics / tag manager?
-9. **BookedPeriod без транзакцій:** `syncBookedPeriods()` видаляє і створює без транзакції — чи це прийнятний ризик?
-10. **Service types:** Наразі тільки `debris_removal` — які ще послуги планується додати?
+4. **Кнопка "Залишити заявку" в Hero:** Чому закоментована? Тимчасово чи назавжди?
+5. **Оплата:** Чи планується інтеграція з платіжною системою?
+6. **Мультимовність:** Чи потрібна English версія або інші мови?
+7. **Аналітика:** Чи потрібен Google Analytics / tag manager?
+8. **BookedPeriod без транзакцій:** `syncBookedPeriods()` видаляє і створює без транзакції — чи це прийнятний ризик?

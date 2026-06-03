@@ -1,9 +1,9 @@
 export default function WhyChooseUs() {
   const points = [
-    { title: "Власний парк техніки", desc: "Понад 50 одиниць сучасної будівельної техніки провідних брендів" },
-    { title: "Досвідчені оператори", desc: "Кваліфіковані спеціалісти з багаторічним досвідом роботи" },
-    { title: "Швидка подача техніки", desc: "Доставка на обʼєкт протягом 2–4 годин після замовлення" },
-    { title: "Працюємо по Львову та області", desc: "Обслуговуємо будівельні майданчики у Львові та Львівській області" },
+    { title: "Техніка під конкретну роботу", desc: "Для траншеї, планування ділянки чи вивозу ґрунту потрібні різні машини. Допоможемо вибрати." },
+    { title: "Оператор разом із технікою", desc: "Для робіт, що потребують керування технікою, погодимо подачу з оператором." },
+    { title: "Дата без припущень", desc: "Час виїзду підтверджуємо після перевірки заявки й доступності машини." },
+    { title: "Львів та область", desc: "Працюємо на приватних ділянках і будівельних об'єктах у регіоні." },
   ];
 
   return (
@@ -12,7 +12,7 @@ export default function WhyChooseUs() {
       <div className="relative h-[420px] w-full overflow-hidden rounded-[18px] max-lg:h-[280px]">
         <img
           src="https://bf-logistic.ua/images/category/bud-teh/1075462460_1075462460.jpg.pagespeed.ce.juQWDfrMuV.jpg"
-          alt="Спецтехніка TechnoRent на будівельному майданчику"
+          alt="Спецтехніка на будівельному майданчику"
           className="h-full w-full object-cover"
           loading="lazy"
           width={800}
@@ -20,9 +20,8 @@ export default function WhyChooseUs() {
         />
         <div className="absolute inset-0 bg-black/40" />
         <h2 className="absolute inset-0 flex items-center justify-center text-center text-[34px] font-bold leading-tight text-white max-lg:text-2xl max-md:text-xl">
-          Чому обирають{" "}
-          <br />
-          <span className="text-primary">TechnoRent</span>
+          Як ми&nbsp;
+          <span className="text-primary">працюємо</span>
         </h2>
       </div>
 

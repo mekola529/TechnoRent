@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { trackPhoneClick } from "../lib/analytics";
 
 export default function Footer() {
   return (
@@ -8,7 +9,7 @@ export default function Footer() {
         <div className="flex flex-col gap-2">
           <h4 className="text-base font-bold text-white">Контакти</h4>
           <address className="not-italic text-[13px] font-medium leading-[1.5] text-gray-100">
-            <a href="tel:+380670000000" aria-label="Зателефонувати">+380 (67) 000-00-00</a>
+            <a href="tel:+380670000000" aria-label="Зателефонувати" onClick={() => trackPhoneClick({ placement: "footer" })}>+380 (67) 000-00-00</a>
             <br />
             <a href="mailto:info@technorent.ua" aria-label="Написати email">info@technorent.ua</a>
           </address>
@@ -23,6 +24,7 @@ export default function Footer() {
             <Link to="/services" className="hover:text-primary transition-colors">Послуги</Link>
             <Link to="/services/vyviz-budivelnogo-smittia" className="hover:text-primary transition-colors">Вивіз сміття</Link>
             <Link to="/contacts" className="hover:text-primary transition-colors">Контакти</Link>
+            <Link to="/account" className="hover:text-primary transition-colors">Кабінет</Link>
           </div>
         </nav>
 

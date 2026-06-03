@@ -11,6 +11,7 @@ import {
   ConfirmModal,
 } from "../components/admin";
 import { AdminInput, AdminTextarea } from "../components/admin/AdminInput";
+import AddressAutocompleteInput from "../components/AddressAutocompleteInput";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -31,11 +32,32 @@ interface ApiEquipment {
   brand: string;
   type: string;
   description: string;
+  pricingType: string;
   pricePerHour: number;
+  fuelConsumptionPer100Km: number | null;
+  fuelConsumptionPerEngineHour: number | null;
   isPopular: boolean;
+  baseAddress: string | null;
+  baseLatitude: number | null;
+  baseLongitude: number | null;
   specs: { id: string; label: string; value: string }[];
   images: { id: string; url: string; alt: string }[];
   bookedPeriods: { id: string; from: string; to: string; note: string | null }[];
+  trackerDevice: {
+    id: string;
+    name: string;
+    lastAddress: string | null;
+    lastTrackerAt: string | null;
+  } | null;
+}
+
+interface GpsDeviceOption {
+  id: string;
+  name: string;
+  equipmentId: string | null;
+  equipment: { id: string; name: string; slug: string } | null;
+  lastAddress: string | null;
+  lastTrackerAt: string | null;
 }
 
 interface FormState {
@@ -43,11 +65,18 @@ interface FormState {
   slug: string;
   brand: string;
   type: string;
+  pricingType: string;
   price: string;
+  fuelConsumptionPer100Km: string;
+  fuelConsumptionPerEngineHour: string;
   description: string;
   isPopular: boolean;
+  baseAddress: string;
+  baseLatitude: string;
+  baseLongitude: string;
   images: ImageItem[];
   specs: SpecItem[];
+  trackerDeviceId: string;
   uiStatus: "active" | "inactive";
 }
 
@@ -56,12 +85,24 @@ interface FieldErrors {
   slug?: string;
   brand?: string;
   type?: string;
+  pricingType?: string;
   price?: string;
+  fuelConsumptionPer100Km?: string;
+  fuelConsumptionPerEngineHour?: string;
   description?: string;
   images?: string;
 }
 
 const typeLabels: Record<string, string> = {
+  Екскаватор: "Екскаватор",
+  Навантажувач: "Навантажувач",
+  Бульдозер: "Бульдозер",
+  Кран: "Кран",
+  Каток: "Каток",
+  Самоскид: "Самоскид",
+  Бетонозмішувач: "Бетонозмішувач",
+  Генератор: "Генератор",
+  Інше: "Інше",
   excavator: "Екскаватор",
   loader: "Навантажувач",
   bulldozer: "Бульдозер",
@@ -73,16 +114,100 @@ const typeLabels: Record<string, string> = {
   other: "Інше",
 };
 
+const builtInTypeOptions = [
+  "Екскаватор",
+  "Навантажувач",
+  "Бульдозер",
+  "Кран",
+  "Каток",
+  "Самоскид",
+  "Бетонозмішувач",
+  "Генератор",
+  "Інше",
+];
+
+const pricingTypeLabels: Record<string, string> = {
+  fixed_from: "Від (фіксована)",
+  hourly_from: "Від (погодинна)",
+  calculator: "Калькулятор",
+  tow_calculator: "Калькулятор евакуатора",
+  material_delivery_calculator: "Калькулятор сипучих матеріалів",
+  custom: "Індивідуально",
+};
+
+function getPriceFieldMeta(pricingType: string) {
+  if (pricingType === "tow_calculator" || pricingType === "material_delivery_calculator") {
+    return {
+      label: "Тариф за 1 км *",
+      placeholder: "35",
+      summarySuffix: "грн/км",
+    };
+  }
+  if (pricingType === "fixed_from") {
+    return {
+      label: "Вартість від *",
+      placeholder: "2500",
+      summarySuffix: "грн",
+    };
+  }
+  if (pricingType === "calculator") {
+    return {
+      label: "Базова вартість *",
+      placeholder: "1200",
+      summarySuffix: "грн",
+    };
+  }
+  if (pricingType === "custom") {
+    return {
+      label: "Орієнтовна вартість *",
+      placeholder: "1",
+      summarySuffix: "грн",
+    };
+  }
+  return {
+    label: "Ціна за годину *",
+    placeholder: "800",
+    summarySuffix: "грн/год",
+  };
+}
+
+function formatEquipmentPriceLabel(price: number | string, pricingType?: string) {
+  const amount = typeof price === "number" ? price : Number(price);
+  if (!Number.isFinite(amount) || amount <= 0) return "—";
+  const formatted = new Intl.NumberFormat("uk-UA", { maximumFractionDigits: 0 }).format(amount);
+  switch (pricingType) {
+    case "fixed_from":
+      return `від ${formatted} грн`;
+    case "calculator":
+      return `калькулятор від ${formatted} грн`;
+    case "tow_calculator":
+    case "material_delivery_calculator":
+      return `${formatted} грн/км`;
+    case "custom":
+      return "індивідуально";
+    case "hourly_from":
+    default:
+      return `від ${formatted} грн/год`;
+  }
+}
+
 const emptyForm: FormState = {
   name: "",
   slug: "",
   brand: "",
-  type: "excavator",
+  type: "Екскаватор",
+  pricingType: "hourly_from",
   price: "",
+  fuelConsumptionPer100Km: "",
+  fuelConsumptionPerEngineHour: "",
   description: "",
   isPopular: false,
+  baseAddress: "",
+  baseLatitude: "",
+  baseLongitude: "",
   images: [],
   specs: [],
+  trackerDeviceId: "",
   uiStatus: "active",
 };
 
@@ -108,17 +233,26 @@ function serializeForm(form: FormState) {
     slug: form.slug,
     brand: form.brand,
     type: form.type,
+    pricingType: form.pricingType,
     price: form.price,
+    fuelConsumptionPer100Km: form.fuelConsumptionPer100Km,
+    fuelConsumptionPerEngineHour: form.fuelConsumptionPerEngineHour,
     description: form.description,
     isPopular: form.isPopular,
+    baseAddress: form.baseAddress,
+    baseLatitude: form.baseLatitude,
+    baseLongitude: form.baseLongitude,
     images: form.images,
     specs: form.specs,
+    trackerDeviceId: form.trackerDeviceId,
     uiStatus: form.uiStatus,
   });
 }
 
 export default function AdminEquipmentPage() {
   const [items, setItems] = useState<ApiEquipment[]>([]);
+  const [gpsDevices, setGpsDevices] = useState<GpsDeviceOption[]>([]);
+  const [typeOptions, setTypeOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
@@ -157,8 +291,29 @@ export default function AdminEquipmentPage() {
     });
   }, [items, search, filterType]);
 
+  const availableTypeOptions = useMemo(() => {
+    const merged = Array.from(
+      new Set([...builtInTypeOptions, ...typeOptions]),
+    );
+
+    const builtIn = merged.filter((value) => builtInTypeOptions.includes(value));
+    const custom = merged
+      .filter((value) => !builtInTypeOptions.includes(value))
+      .sort((a, b) => a.localeCompare(b, "uk"));
+
+    return [...builtIn, ...custom];
+  }, [typeOptions]);
+
+  const availableGpsDevices = useMemo(() => {
+    return gpsDevices.filter((device) => {
+      if (!device.equipmentId) return true;
+      return device.equipmentId === editingItem?.id;
+    });
+  }, [gpsDevices, editingItem?.id]);
+
   const formMode: "create" | "edit" = editingItem?.id ? "edit" : "create";
   const isDirty = serializeForm(form) !== initialSnapshotRef.current;
+  const priceFieldMeta = getPriceFieldMeta(form.pricingType);
 
   useEffect(() => {
     if (!formOpen || slugTouched) return;
@@ -177,8 +332,14 @@ export default function AdminEquipmentPage() {
   async function loadItems() {
     setLoading(true);
     try {
-      const data = await apiFetch<ApiEquipment[]>("/equipment");
+      const [data, gps] = await Promise.all([
+        apiFetch<ApiEquipment[]>("/admin/equipment"),
+        apiFetch<GpsDeviceOption[]>("/admin/gps"),
+      ]);
       setItems(data);
+      setGpsDevices(gps);
+      const types = await apiFetch<string[]>("/admin/equipment/types");
+      setTypeOptions(types);
     } catch {
       // silently fail
     } finally {
@@ -210,11 +371,20 @@ export default function AdminEquipmentPage() {
       slug: item.slug,
       brand: item.brand,
       type: item.type,
+      pricingType: item.pricingType ?? "hourly_from",
       price: String(item.pricePerHour),
+      fuelConsumptionPer100Km:
+        item.fuelConsumptionPer100Km == null ? "" : String(item.fuelConsumptionPer100Km),
+      fuelConsumptionPerEngineHour:
+        item.fuelConsumptionPerEngineHour == null ? "" : String(item.fuelConsumptionPerEngineHour),
       description: item.description,
       isPopular: item.isPopular,
+      baseAddress: item.baseAddress ?? "",
+      baseLatitude: item.baseLatitude != null ? String(item.baseLatitude) : "",
+      baseLongitude: item.baseLongitude != null ? String(item.baseLongitude) : "",
       images: item.images.map((img) => ({ url: img.url, alt: img.alt })),
       specs: item.specs.map((spec) => ({ label: spec.label, value: spec.value })),
+      trackerDeviceId: item.trackerDevice?.id ?? "",
       uiStatus: "active",
     };
 
@@ -357,11 +527,21 @@ export default function AdminEquipmentPage() {
     if (!form.type.trim()) next.type = "Оберіть тип";
 
     const priceNum = Number(form.price);
-    if (!form.price.trim()) next.price = "Вкажіть ціну за годину";
-    else if (Number.isNaN(priceNum) || priceNum <= 0) next.price = "Ціна має бути більше 0";
+    if (!form.pricingType.trim()) next.pricingType = "Оберіть тип ціни";
+    if (!form.price.trim()) next.price = "Вкажіть значення ціни";
+    else if (Number.isNaN(priceNum) || priceNum <= 0) next.price = "Значення має бути більше 0";
 
     if (!form.description.trim()) next.description = "Додайте короткий опис";
     if (form.images.length === 0) next.images = "Додайте щонайменше одне фото";
+    const per100Km = form.fuelConsumptionPer100Km.trim() === "" ? null : Number(form.fuelConsumptionPer100Km);
+    const perHour =
+      form.fuelConsumptionPerEngineHour.trim() === "" ? null : Number(form.fuelConsumptionPerEngineHour);
+    if (per100Km != null && (!Number.isFinite(per100Km) || per100Km < 0)) {
+      next.fuelConsumptionPer100Km = "Вкажіть число 0 або більше";
+    }
+    if (perHour != null && (!Number.isFinite(perHour) || perHour < 0)) {
+      next.fuelConsumptionPerEngineHour = "Вкажіть число 0 або більше";
+    }
 
     setFieldErrors(next);
 
@@ -387,10 +567,19 @@ export default function AdminEquipmentPage() {
       brand: form.brand.trim(),
       type: form.type,
       description: form.description.trim(),
+      pricingType: form.pricingType,
       pricePerHour: Number(form.price),
+      fuelConsumptionPer100Km:
+        form.fuelConsumptionPer100Km.trim() === "" ? null : Number(form.fuelConsumptionPer100Km),
+      fuelConsumptionPerEngineHour:
+        form.fuelConsumptionPerEngineHour.trim() === "" ? null : Number(form.fuelConsumptionPerEngineHour),
       isPopular: form.isPopular,
+      baseAddress: form.baseAddress.trim() || null,
+      baseLatitude: form.baseLatitude.trim() ? Number(form.baseLatitude) : null,
+      baseLongitude: form.baseLongitude.trim() ? Number(form.baseLongitude) : null,
       images: form.images,
       specs: form.specs.filter((s) => s.label.trim() && s.value.trim()),
+      trackerDeviceId: form.trackerDeviceId || null,
     };
 
     try {
@@ -434,12 +623,15 @@ export default function AdminEquipmentPage() {
     return {
       name: form.name || "-",
       type: typeLabels[form.type] ?? form.type,
+      pricingType: form.pricingType,
       price: form.price || "-",
       hasPhoto: form.images.length > 0,
       status: editingItem.bookedPeriods.length > 0 ? "busy" : "available",
       isPopular: form.isPopular,
+      trackerDevice: availableGpsDevices.find((device) => device.id === form.trackerDeviceId) ?? null,
+      baseAddress: form.baseAddress.trim() || null,
     };
-  }, [editingItem, form]);
+  }, [availableGpsDevices, editingItem, form]);
 
   /* ─── Form view (replaces the table when open) ─── */
   if (formOpen) {
@@ -530,24 +722,32 @@ export default function AdminEquipmentPage() {
                   </div>
 
                   <div>
-                    <AdminSelect
+                    <AdminInput
                       label="Тип *"
+                      list="equipment-types"
                       value={form.type}
                       onChange={(e) => {
                         setForm((prev) => ({ ...prev, type: e.target.value }));
                         setFieldErrors((prev) => ({ ...prev, type: undefined }));
                       }}
-                    >
-                      {Object.entries(typeLabels).map(([val, label]) => (
-                        <option key={val} value={val}>{label}</option>
+                      placeholder="Оберіть або введіть новий тип"
+                    />
+                    <datalist id="equipment-types">
+                      {availableTypeOptions.map((value) => (
+                        <option key={value} value={value}>
+                          {typeLabels[value] ?? value}
+                        </option>
                       ))}
-                    </AdminSelect>
+                    </datalist>
+                    <p className="mt-1 text-[11px] text-gray-400">
+                      Почніть вводити тип, щоб вибрати зі списку, або введіть новий. Після збереження він зʼявиться для повторного використання.
+                    </p>
                     {fieldErrors.type && <p className="mt-1 text-xs text-red-600">{fieldErrors.type}</p>}
                   </div>
 
                   <div>
                     <AdminInput
-                      label="Ціна / год *"
+                      label={priceFieldMeta.label}
                       type="number"
                       min={1}
                       value={form.price}
@@ -555,9 +755,61 @@ export default function AdminEquipmentPage() {
                         setForm((prev) => ({ ...prev, price: e.target.value }));
                         setFieldErrors((prev) => ({ ...prev, price: undefined }));
                       }}
-                      placeholder="800"
+                      placeholder={priceFieldMeta.placeholder}
                     />
                     {fieldErrors.price && <p className="mt-1 text-xs text-red-600">{fieldErrors.price}</p>}
+                  </div>
+
+                  <div>
+                    <AdminSelect
+                      label="Тип ціни"
+                      value={form.pricingType}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, pricingType: e.target.value }));
+                        setFieldErrors((prev) => ({ ...prev, pricingType: undefined }));
+                      }}
+                    >
+                      {Object.entries(pricingTypeLabels).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </AdminSelect>
+                    {fieldErrors.pricingType && <p className="mt-1 text-xs text-red-600">{fieldErrors.pricingType}</p>}
+                  </div>
+
+                  <div>
+                    <AdminInput
+                      label="Середній розхід, л / 100 км"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={form.fuelConsumptionPer100Km}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, fuelConsumptionPer100Km: e.target.value }));
+                        setFieldErrors((prev) => ({ ...prev, fuelConsumptionPer100Km: undefined }));
+                      }}
+                      placeholder="Напр. 18"
+                    />
+                    {fieldErrors.fuelConsumptionPer100Km && (
+                      <p className="mt-1 text-xs text-red-600">{fieldErrors.fuelConsumptionPer100Km}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <AdminInput
+                      label="Середній розхід, л / мотогодину"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={form.fuelConsumptionPerEngineHour}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, fuelConsumptionPerEngineHour: e.target.value }));
+                        setFieldErrors((prev) => ({ ...prev, fuelConsumptionPerEngineHour: undefined }));
+                      }}
+                      placeholder="Напр. 7.5"
+                    />
+                    {fieldErrors.fuelConsumptionPerEngineHour && (
+                      <p className="mt-1 text-xs text-red-600">{fieldErrors.fuelConsumptionPerEngineHour}</p>
+                    )}
                   </div>
 
                   <div>
@@ -570,6 +822,81 @@ export default function AdminEquipmentPage() {
                       <option value="inactive">Неактивна</option>
                     </AdminSelect>
                     <p className="mt-1 text-[11px] text-gray-400">Поки що інформаційне поле (не зберігається у бекенд).</p>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <AdminSelect
+                      label="GPS маячок"
+                      value={form.trackerDeviceId}
+                      onChange={(e) => setForm((prev) => ({ ...prev, trackerDeviceId: e.target.value }))}
+                    >
+                      <option value="">Не прив'язано</option>
+                      {availableGpsDevices.map((device) => (
+                        <option key={device.id} value={device.id}>
+                          {device.name}
+                          {device.equipment && device.equipment.id !== editingItem?.id
+                            ? ` — зайнятий: ${device.equipment.name}`
+                            : ""}
+                        </option>
+                      ))}
+                    </AdminSelect>
+                    <p className="mt-1 text-[11px] text-gray-400">
+                      У списку доступні лише вільні маячки або той, що вже прив&apos;язаний до цієї техніки.
+                    </p>
+                  </div>
+                </div>
+              </AdminCard>
+
+              <AdminCard className="!p-4">
+                <h3 className="mb-3 text-sm font-bold text-gray-900">База техніки</h3>
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-gray-600">
+                      Базова адреса
+                    </label>
+                    <AddressAutocompleteInput
+                      value={form.baseAddress}
+                      onChange={(value) => {
+                        setForm((prev) => ({
+                          ...prev,
+                          baseAddress: value,
+                          baseLatitude: "",
+                          baseLongitude: "",
+                        }));
+                      }}
+                      onSelect={(suggestion) => {
+                        setForm((prev) => ({
+                          ...prev,
+                          baseAddress: suggestion.label,
+                          baseLatitude: String(suggestion.lat),
+                          baseLongitude: String(suggestion.lon),
+                        }));
+                      }}
+                      placeholder="Почніть вводити адресу бази техніки"
+                      inputClassName="!rounded-lg !border-gray-200 !px-3 !py-2 !text-sm !text-gray-900"
+                    />
+                    <p className="mt-1 text-[11px] text-gray-400">
+                      Для запланованих калькуляторних заявок маршрут стартує з цієї бази, а не з live GPS.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <AdminInput
+                      label="Широта"
+                      type="number"
+                      step="any"
+                      value={form.baseLatitude}
+                      onChange={(e) => setForm((prev) => ({ ...prev, baseLatitude: e.target.value }))}
+                      placeholder="49.8397"
+                    />
+                    <AdminInput
+                      label="Довгота"
+                      type="number"
+                      step="any"
+                      value={form.baseLongitude}
+                      onChange={(e) => setForm((prev) => ({ ...prev, baseLongitude: e.target.value }))}
+                      placeholder="24.0297"
+                    />
                   </div>
                 </div>
               </AdminCard>
@@ -755,8 +1082,11 @@ export default function AdminEquipmentPage() {
                 <div className="flex flex-col gap-2 text-sm">
                   <div className="flex justify-between gap-2"><span className="text-gray-500">Назва</span><span className="font-medium text-gray-900">{form.name || "-"}</span></div>
                   <div className="flex justify-between gap-2"><span className="text-gray-500">Тип</span><span className="font-medium text-gray-900">{typeLabels[form.type] ?? form.type}</span></div>
-                  <div className="flex justify-between gap-2"><span className="text-gray-500">Ціна</span><span className="font-medium text-gray-900">{form.price ? `${form.price} грн/год` : "-"}</span></div>
+                  <div className="flex justify-between gap-2"><span className="text-gray-500">Тип ціни</span><span className="font-medium text-gray-900">{pricingTypeLabels[form.pricingType] ?? form.pricingType}</span></div>
+                  <div className="flex justify-between gap-2"><span className="text-gray-500">Ціна</span><span className="font-medium text-gray-900">{formatEquipmentPriceLabel(form.price, form.pricingType)}</span></div>
                   <div className="flex justify-between gap-2"><span className="text-gray-500">Фото</span><span className="font-medium text-gray-900">{form.images.length}</span></div>
+                  <div className="flex justify-between gap-2"><span className="text-gray-500">GPS</span><span className="font-medium text-gray-900">{editSummary?.trackerDevice?.name ?? "Не прив'язано"}</span></div>
+                  <div className="flex justify-between gap-2"><span className="text-gray-500">База</span><span className="max-w-[180px] truncate font-medium text-gray-900">{editSummary?.baseAddress ?? "Не вказано"}</span></div>
                   <div className="flex justify-between gap-2"><span className="text-gray-500">Популярна</span><span className="font-medium text-gray-900">{form.isPopular ? "Так" : "Ні"}</span></div>
                   {editSummary && (
                     <div className="flex justify-between gap-2"><span className="text-gray-500">Зайнятість</span><StatusBadge status={editSummary.status as "busy" | "available"} /></div>
@@ -804,8 +1134,8 @@ export default function AdminEquipmentPage() {
         <div className="w-full sm:w-44">
           <AdminSelect value={filterType} onChange={(e) => setFilterType(e.target.value)}>
             <option value="">Всі типи</option>
-            {Object.entries(typeLabels).map(([val, label]) => (
-              <option key={val} value={val}>{label}</option>
+            {availableTypeOptions.map((val) => (
+              <option key={val} value={val}>{typeLabels[val] ?? val}</option>
             ))}
           </AdminSelect>
         </div>
@@ -815,13 +1145,14 @@ export default function AdminEquipmentPage() {
         <div className="hidden items-center gap-2 border-b border-gray-100 bg-gray-50 px-4 py-2.5 sm:flex">
           <span className="flex-1 text-xs font-semibold text-gray-500">Назва</span>
           <span className="w-24 text-xs font-semibold text-gray-500">Тип</span>
-          <span className="w-20 text-xs font-semibold text-gray-500">Ціна/год</span>
+          <span className="w-40 text-xs font-semibold text-gray-500">GPS</span>
+          <span className="w-28 text-xs font-semibold text-gray-500">Ціна</span>
           <span className="w-20 text-xs font-semibold text-gray-500">Статус</span>
           <span className="w-16 text-right text-xs font-semibold text-gray-500">Дії</span>
         </div>
 
         {loading ? (
-          <AdminTableRowsSkeleton rows={6} cols={5} />
+          <AdminTableRowsSkeleton rows={6} cols={6} />
         ) : filtered.length === 0 ? (
           <p className="py-10 text-center text-sm text-gray-400">
             {items.length === 0 ? "Техніка відсутня" : "Нічого не знайдено"}
@@ -836,15 +1167,19 @@ export default function AdminEquipmentPage() {
               >
                 <div className="flex items-center justify-between sm:flex-1">
                   <span className="text-sm font-medium text-gray-900">{item.name}</span>
-                  <span className="text-xs text-gray-500 sm:hidden">{item.pricePerHour} грн</span>
+                  <span className="text-xs text-gray-500 sm:hidden">{formatEquipmentPriceLabel(item.pricePerHour, item.pricingType)}</span>
                 </div>
 
                 <span className="hidden w-24 text-xs text-gray-500 sm:block">
                   {typeLabels[item.type] ?? item.type}
                 </span>
 
-                <span className="hidden w-20 text-sm font-medium text-gray-700 sm:block">
-                  {item.pricePerHour}
+                <span className="hidden w-40 truncate text-xs text-gray-500 sm:block">
+                  {item.trackerDevice?.name ?? "—"}
+                </span>
+
+                <span className="hidden w-28 text-sm font-medium text-gray-700 sm:block">
+                  {formatEquipmentPriceLabel(item.pricePerHour, item.pricingType)}
                 </span>
 
                 <div className="flex items-center justify-between sm:contents">

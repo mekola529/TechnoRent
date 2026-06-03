@@ -25,11 +25,13 @@ interface ApiService {
   image: string;
   priceInfo: string;
   pricingType: string;
+  deliveryRatePerKm: number | null;
   relatedEquipmentTypes: string[];
   features: string[];
   seoTitle: string;
   seoDescription: string;
   isActive: boolean;
+  isPopular: boolean;
   sortOrder: number;
 }
 
@@ -41,11 +43,13 @@ interface FormState {
   image: string;
   priceInfo: string;
   pricingType: string;
+  deliveryRatePerKm: string;
   relatedEquipmentTypes: string[];
   features: string[];
   seoTitle: string;
   seoDescription: string;
   isActive: boolean;
+  isPopular: boolean;
   sortOrder: string;
 }
 
@@ -56,16 +60,28 @@ interface FieldErrors {
   fullDescription?: string;
   image?: string;
   priceInfo?: string;
+  deliveryRatePerKm?: string;
 }
 
 const pricingTypeLabels: Record<string, string> = {
   fixed_from: "Від (фіксована)",
   hourly_from: "Від (погодинна)",
   calculator: "Калькулятор",
+  tow_calculator: "Калькулятор евакуатора",
+  material_delivery_calculator: "Калькулятор доставки матеріалів",
   custom: "Індивідуально",
 };
 
 const equipmentTypeLabels: Record<string, string> = {
+  Екскаватор: "Екскаватор",
+  Навантажувач: "Навантажувач",
+  Бульдозер: "Бульдозер",
+  Кран: "Кран",
+  Каток: "Каток",
+  Самоскид: "Самоскид",
+  Бетонозмішувач: "Бетонозмішувач",
+  Генератор: "Генератор",
+  Інше: "Інше",
   excavator: "Екскаватор",
   loader: "Навантажувач",
   bulldozer: "Бульдозер",
@@ -85,11 +101,13 @@ const emptyForm: FormState = {
   image: "",
   priceInfo: "",
   pricingType: "custom",
+  deliveryRatePerKm: "",
   relatedEquipmentTypes: [],
   features: [],
   seoTitle: "",
   seoDescription: "",
   isActive: true,
+  isPopular: false,
   sortOrder: "0",
 };
 
@@ -108,10 +126,39 @@ function serializeForm(form: FormState) {
   return JSON.stringify(form);
 }
 
+function isCalculatorPricingType(pricingType: string) {
+  return pricingType === "tow_calculator" || pricingType === "material_delivery_calculator";
+}
+
+function getPriceFieldMeta(pricingType: string) {
+  if (pricingType === "tow_calculator") {
+    return {
+      label: "Текст вартості на сайті *",
+      placeholder: "Напр. Орієнтовний розрахунок за маршрутом",
+      hint: "Реальний тариф для розрахунку задається окремо нижче.",
+    };
+  }
+
+  if (pricingType === "material_delivery_calculator") {
+    return {
+      label: "Текст вартості на сайті *",
+      placeholder: "Напр. Вартість залежить від матеріалу та адреси доставки",
+      hint: "Цей текст не використовується у формулі розрахунку.",
+    };
+  }
+
+  return {
+    label: "Вартість *",
+    placeholder: "від 1 200 грн/год",
+    hint: "",
+  };
+}
+
 // ─── Component ────────────────────────────────────
 
 export default function AdminServicesPage() {
   const [items, setItems] = useState<ApiService[]>([]);
+  const [equipmentTypeOptions, setEquipmentTypeOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -138,6 +185,11 @@ export default function AdminServicesPage() {
 
   const formMode: "create" | "edit" = editingItem?.id ? "edit" : "create";
   const isDirty = serializeForm(form) !== initialSnapshotRef.current;
+  const priceFieldMeta = getPriceFieldMeta(form.pricingType);
+  const showDeliveryRateField = isCalculatorPricingType(form.pricingType);
+  const availableEquipmentTypes = Array.from(
+    new Set([...equipmentTypeOptions, ...form.relatedEquipmentTypes]),
+  ).sort((a, b) => a.localeCompare(b, "uk"));
 
   // Auto-generate slug from title
   useEffect(() => {
@@ -166,8 +218,12 @@ export default function AdminServicesPage() {
   async function loadItems() {
     setLoading(true);
     try {
-      const data = await apiFetch<ApiService[]>("/admin/services");
+      const [data, types] = await Promise.all([
+        apiFetch<ApiService[]>("/admin/services"),
+        apiFetch<string[]>("/admin/equipment/types"),
+      ]);
       setItems(data);
+      setEquipmentTypeOptions(types);
     } catch {
       // silently fail
     } finally {
@@ -244,11 +300,13 @@ export default function AdminServicesPage() {
       image: item.image,
       priceInfo: item.priceInfo,
       pricingType: item.pricingType,
+      deliveryRatePerKm: item.deliveryRatePerKm != null ? String(item.deliveryRatePerKm) : "",
       relatedEquipmentTypes: [...item.relatedEquipmentTypes],
       features: [...item.features],
       seoTitle: item.seoTitle,
       seoDescription: item.seoDescription,
       isActive: item.isActive,
+      isPopular: item.isPopular,
       sortOrder: String(item.sortOrder),
     };
     setEditingItem(item);
@@ -338,6 +396,14 @@ export default function AdminServicesPage() {
     if (!form.fullDescription.trim()) next.fullDescription = "Вкажіть повний опис";
     if (!form.image.trim()) next.image = "Додайте зображення";
     if (!form.priceInfo.trim()) next.priceInfo = "Вкажіть вартість";
+    if (isCalculatorPricingType(form.pricingType)) {
+      const rate = Number(form.deliveryRatePerKm);
+      if (!form.deliveryRatePerKm.trim()) {
+        next.deliveryRatePerKm = "Вкажіть тариф за 1 км";
+      } else if (Number.isNaN(rate) || rate <= 0) {
+        next.deliveryRatePerKm = "Тариф має бути більше 0";
+      }
+    }
     setFieldErrors(next);
     const count = Object.keys(next).length;
     if (count > 0) setSubmitError(`Заповніть обов'язкові поля (${count})`);
@@ -359,11 +425,13 @@ export default function AdminServicesPage() {
       image: form.image.trim(),
       priceInfo: form.priceInfo.trim(),
       pricingType: form.pricingType,
+      deliveryRatePerKm: showDeliveryRateField ? Number(form.deliveryRatePerKm) : null,
       relatedEquipmentTypes: form.relatedEquipmentTypes,
       features: form.features.filter((f) => f.trim()),
       seoTitle: form.seoTitle.trim(),
       seoDescription: form.seoDescription.trim(),
       isActive: form.isActive,
+      isPopular: form.isPopular,
       sortOrder: editingItem?.id ? editingItem.sortOrder : items.length + 1,
     };
 
@@ -456,8 +524,9 @@ export default function AdminServicesPage() {
                     {fieldErrors.slug && <p className="mt-1 text-xs text-red-600">{fieldErrors.slug}</p>}
                   </div>
                   <div>
-                    <AdminInput label="Вартість *" value={form.priceInfo} onChange={(e) => { setForm((p) => ({ ...p, priceInfo: e.target.value })); setFieldErrors((p) => ({ ...p, priceInfo: undefined })); }} placeholder="від 1 200 грн/год" />
+                    <AdminInput label={priceFieldMeta.label} value={form.priceInfo} onChange={(e) => { setForm((p) => ({ ...p, priceInfo: e.target.value })); setFieldErrors((p) => ({ ...p, priceInfo: undefined })); }} placeholder={priceFieldMeta.placeholder} />
                     {fieldErrors.priceInfo && <p className="mt-1 text-xs text-red-600">{fieldErrors.priceInfo}</p>}
+                    {priceFieldMeta.hint && <p className="mt-1 text-[11px] text-gray-400">{priceFieldMeta.hint}</p>}
                   </div>
                   <div>
                     <AdminSelect label="Тип ціни" value={form.pricingType} onChange={(e) => setForm((p) => ({ ...p, pricingType: e.target.value }))}>
@@ -466,6 +535,26 @@ export default function AdminServicesPage() {
                       ))}
                     </AdminSelect>
                   </div>
+                  {showDeliveryRateField && (
+                    <div>
+                      <AdminInput
+                        label="Тариф доставки за 1 км *"
+                        type="number"
+                        min={1}
+                        step="0.01"
+                        value={form.deliveryRatePerKm}
+                        onChange={(e) => {
+                          setForm((p) => ({ ...p, deliveryRatePerKm: e.target.value }));
+                          setFieldErrors((p) => ({ ...p, deliveryRatePerKm: undefined }));
+                        }}
+                        placeholder="35"
+                      />
+                      {fieldErrors.deliveryRatePerKm && <p className="mt-1 text-xs text-red-600">{fieldErrors.deliveryRatePerKm}</p>}
+                      <p className="mt-1 text-[11px] text-gray-400">
+                        Це джерело істини для калькуляторів евакуатора та доставки матеріалів.
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <AdminSelect label="Статус" value={form.isActive ? "active" : "inactive"} onChange={(e) => setForm((p) => ({ ...p, isActive: e.target.value === "active" }))}>
                       <option value="active">Активна</option>
@@ -562,21 +651,34 @@ export default function AdminServicesPage() {
               <AdminCard className="!p-4">
                 <h3 className="mb-3 text-sm font-bold text-gray-900">Типи техніки</h3>
                 <div className="flex flex-wrap gap-2">
-                  {Object.entries(equipmentTypeLabels).map(([val, label]) => (
+                  {availableEquipmentTypes.map((type) => (
                     <button
-                      key={val}
+                      key={type}
                       type="button"
-                      onClick={() => toggleEquipmentType(val)}
+                      onClick={() => toggleEquipmentType(type)}
                       className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                        form.relatedEquipmentTypes.includes(val)
+                        form.relatedEquipmentTypes.includes(type)
                           ? "bg-blue-100 text-blue-700 ring-1 ring-blue-300"
                           : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                       }`}
                     >
-                      {label}
+                      {equipmentTypeLabels[type] ?? type}
                     </button>
                   ))}
                 </div>
+              </AdminCard>
+
+              <AdminCard className="!p-4">
+                <h3 className="mb-3 text-sm font-bold text-gray-900">Додаткові налаштування</h3>
+                <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={form.isPopular}
+                    onChange={(e) => setForm((prev) => ({ ...prev, isPopular: e.target.checked }))}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <span className="text-sm text-gray-700">Популярна послуга</span>
+                </label>
               </AdminCard>
             </div>
           </div>
@@ -627,6 +729,7 @@ export default function AdminServicesPage() {
               <th className="px-4 py-2.5 text-xs font-semibold text-gray-500">Slug</th>
               <th className="px-4 py-2.5 text-xs font-semibold text-gray-500">Вартість</th>
               <th className="px-4 py-2.5 text-xs font-semibold text-gray-500">Типи техніки</th>
+              <th className="px-4 py-2.5 text-xs font-semibold text-gray-500">Популярна</th>
               <th className="px-4 py-2.5 text-xs font-semibold text-gray-500">Статус</th>
               <th className="px-4 py-2.5 text-xs font-semibold text-gray-500">Порядок</th>
               <th className="w-12" />
@@ -634,10 +737,10 @@ export default function AdminServicesPage() {
           </thead>
           <tbody>
             {loading ? (
-              <AdminTableRowsSkeleton cols={7} rows={5} />
+              <AdminTableRowsSkeleton cols={8} rows={5} />
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-sm text-gray-400">
+                <td colSpan={8} className="py-12 text-center text-sm text-gray-400">
                   Послуг ще немає. Додайте першу!
                 </td>
               </tr>
@@ -648,7 +751,16 @@ export default function AdminServicesPage() {
                     <span className="font-medium text-gray-900">{item.title}</span>
                   </td>
                   <td className="px-4 py-2.5 text-xs text-gray-500">{item.slug}</td>
-                  <td className="px-4 py-2.5 text-xs text-gray-700">{item.priceInfo}</td>
+                  <td className="px-4 py-2.5 text-xs text-gray-700">
+                    <div className="flex flex-col gap-0.5">
+                      <span>{item.priceInfo}</span>
+                      {item.deliveryRatePerKm != null && isCalculatorPricingType(item.pricingType) && (
+                        <span className="font-semibold text-gray-900">
+                          {item.deliveryRatePerKm} грн/км
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-2.5">
                     <div className="flex flex-wrap gap-1">
                       {item.relatedEquipmentTypes.map((t) => (
@@ -657,6 +769,15 @@ export default function AdminServicesPage() {
                         </span>
                       ))}
                     </div>
+                  </td>
+                  <td className="px-4 py-2.5">
+                    {item.isPopular ? (
+                      <span className="rounded-full bg-primary/15 px-2 py-1 text-[11px] font-bold text-amber-700">
+                        Так
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">Ні</span>
+                    )}
                   </td>
                   <td className="px-4 py-2.5">
                     <StatusBadge status={item.isActive ? "active" : "inactive"} />

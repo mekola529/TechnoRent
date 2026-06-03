@@ -3,19 +3,21 @@ import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import Hero from "../components/Hero";
 import PopularEquipment from "../components/PopularEquipment";
+import PopularServices from "../components/PopularServices";
 import HowItWorks from "../components/HowItWorks";
 import WhyChooseUs from "../components/WhyChooseUs";
 import CallToAction from "../components/CallToAction";
 import Footer from "../components/Footer";
 import MobileTabBar from "../components/MobileTabBar";
+import { DEFAULT_OG_IMAGE, absoluteSiteUrl } from "../utils/seo";
 
 const localBusinessJsonLd = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   name: "TechnoRent",
   description:
-    "Оренда спецтехніки у Львові та Львівській області — екскаватори, навантажувачі, бульдозери, крани та інша будівельна техніка.",
-  url: "https://technorent.ua",
+    "Оренда спецтехніки у Львові та області: екскаватори, навантажувачі, бульдозери, крани та інша техніка для будівельних робіт.",
+  url: absoluteSiteUrl("/"),
   telephone: "+380670000000",
   email: "info@technorent.ua",
   address: {
@@ -36,19 +38,19 @@ const localBusinessJsonLd = {
 const homeFaqItems = [
   {
     q: "Яку техніку можна орендувати?",
-    a: "Екскаватори, навантажувачі, бульдозери, автокрани та іншу будівельну спецтехніку для робіт будь-якого масштабу.",
+    a: "У каталозі є екскаватори, навантажувачі, бульдозери, автокрани, самоскиди та евакуатор. Потрібну машину підбираємо під ваше завдання.",
   },
   {
     q: "Як оформити оренду техніки?",
-    a: "Оберіть техніку в каталозі, залиште заявку або зателефонуйте нам. Менеджер уточнить деталі та організує подачу техніки.",
+    a: "Оберіть машину в каталозі або опишіть роботу в заявці. Менеджер уточнить адресу, дату та умови подачі.",
   },
   {
     q: "Чи надаєте оператора разом з технікою?",
-    a: "Так, уся техніка надається з досвідченим оператором.",
+    a: "Для робіт, де потрібен оператор, техніку подаємо разом із ним. Деталі залежать від обраної машини та виду робіт.",
   },
   {
     q: "Яка мінімальна тривалість оренди?",
-    a: "Мінімальний термін оренди — 1 зміна (8 годин). Також можлива довготривала оренда на вигідних умовах.",
+    a: "Мінімальний час залежить від техніки та виду робіт. Залиште заявку, і менеджер уточнить доступні умови.",
   },
 ];
 
@@ -66,18 +68,26 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans">
       <Helmet>
-        <title>TechnoRent — Оренда спецтехніки у Львові | Екскаватори, навантажувачі, крани</title>
+        <title>TechnoRent | Оренда спецтехніки у Львові: екскаватори, крани, навантажувачі</title>
         <meta
           name="description"
-          content="TechnoRent — оренда спецтехніки у Львові та Львівській області. Екскаватори, навантажувачі, бульдозери, крани. Власний парк техніки, досвідчені оператори, швидка подача."
+          content="Оренда спецтехніки у Львові та області. Екскаватори, навантажувачі, бульдозери й крани для робіт на ділянці та будмайданчику."
         />
-        <link rel="canonical" href="https://technorent.ua/" />
-        <meta property="og:title" content="TechnoRent — Оренда спецтехніки у Львові" />
+        <link rel="canonical" href={absoluteSiteUrl("/")} />
+        <meta property="og:title" content="TechnoRent | Оренда спецтехніки у Львові" />
         <meta
           property="og:description"
-          content="Оренда екскаваторів, навантажувачів, бульдозерів та іншої будівельної техніки у Львові. Власний парк, досвідчені оператори, швидка подача."
+          content="Оренда спецтехніки у Львові та області. Екскаватори, навантажувачі, бульдозери й крани для робіт на ділянці та будмайданчику."
         />
-        <meta property="og:url" content="https://technorent.ua/" />
+        <meta property="og:url" content={absoluteSiteUrl("/")} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="TechnoRent | Оренда спецтехніки у Львові" />
+        <meta
+          name="twitter:description"
+          content="Оренда спецтехніки у Львові та області. Екскаватори, навантажувачі, бульдозери й крани для робіт на ділянці та будмайданчику."
+        />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
         <script type="application/ld+json">{JSON.stringify(localBusinessJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(homeFaqJsonLd)}</script>
       </Helmet>
@@ -88,6 +98,7 @@ export default function HomePage() {
         <Hero />
         <HowItWorks />
         <PopularEquipment />
+        <PopularServices />
         <WhyChooseUs />
 
         {/* Debris removal promo */}
@@ -108,8 +119,8 @@ export default function HomePage() {
                   Вивіз будівельного <span className="text-primary">сміття</span>
                 </h2>
                 <p className="text-[15px] leading-relaxed font-medium text-gray-300 max-md:text-sm">
-                  Оперативно вивеземо будівельні відходи, бетон, цеглу, ґрунт та інше сміття з вашого
-                  об'єкта у Львові та області. Працюємо швидко і за графіком.
+                  Вивеземо бетон, цеглу, ґрунт та інші будівельні відходи з об'єкта у Львові
+                  або області. За заявкою уточнимо обсяг, під'їзд і потрібну техніку.
                 </p>
               </div>
 

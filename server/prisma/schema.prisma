@@ -2,7 +2,10 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  output        = "../generated/prisma"
+  engineType    = "binary"
+  binaryTargets = ["native", "debian-openssl-1.0.x", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -21,6 +24,9 @@ model Equipment {
   description String
   pricePerHour Int
   isPopular   Boolean  @default(false)
+  baseAddress   String?
+  baseLatitude  Float?
+  baseLongitude Float?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -170,6 +176,7 @@ model Service {
   image                 String
   priceInfo             String
   pricingType           PricingType     @default(custom)
+  deliveryRatePerKm     Float?
   relatedEquipmentTypes EquipmentType[]
   features              String[]
   seoTitle              String
@@ -182,12 +189,72 @@ model Service {
   @@index([isActive, sortOrder])
 }
 
+// ─── Матеріали і точки постачання ─────────────────
+
+model Material {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  unit             String
+  isActive         Boolean  @default(true)
+  minOrderQuantity Float?
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  offers SupplierMaterialOffer[]
+
+  @@index([isActive, sortOrder])
+}
+
+model SupplierPoint {
+  id           String   @id @default(cuid())
+  name         String
+  address      String
+  latitude     Float
+  longitude    Float
+  isActive     Boolean  @default(true)
+  contactName  String?
+  contactPhone String?
+  workHours    String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  offers SupplierMaterialOffer[]
+
+  @@index([isActive])
+  @@index([latitude, longitude])
+}
+
+model SupplierMaterialOffer {
+  id                 String   @id @default(cuid())
+  supplierPointId    String
+  supplierPoint      SupplierPoint @relation(fields: [supplierPointId], references: [id], onDelete: Cascade)
+  materialId         String
+  material           Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  unitPrice          Float
+  isAvailable        Boolean  @default(true)
+  minOrderQuantity   Float?
+  lastPriceUpdatedAt DateTime?
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([supplierPointId, materialId])
+  @@index([supplierPointId])
+  @@index([materialId])
+  @@index([isAvailable])
+}
+
 // ─── Enums ────────────────────────────────────────
 
 enum PricingType {
   fixed_from
   hourly_from
   calculator
+  tow_calculator
+  material_delivery_calculator
   custom
 }
 

@@ -7,6 +7,35 @@ import path from 'path'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   envDir: path.resolve(__dirname, '..'),
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+
+          if (
+            id.includes('/react/') ||
+            id.includes('/react-dom/') ||
+            id.includes('/scheduler/')
+          ) {
+            return 'react-vendor';
+          }
+
+          if (id.includes('/react-router/') || id.includes('/react-router-dom/')) {
+            return 'router-vendor';
+          }
+
+          if (id.includes('/react-helmet-async/')) {
+            return 'seo-vendor';
+          }
+
+          if (id.includes('/leaflet/') || id.includes('/react-leaflet/')) {
+            return 'maps-vendor';
+          }
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': {

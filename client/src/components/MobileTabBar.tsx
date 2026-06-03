@@ -5,6 +5,7 @@ const tabs = [
   { to: "/catalog", label: "Техніка" },
   { to: "/services", label: "Послуги" },
   { to: "/contacts", label: "Контакти" },
+  { to: "/account", label: "Кабінет" },
 ];
 
 export default function MobileTabBar() {
@@ -13,7 +14,7 @@ export default function MobileTabBar() {
       className="sticky top-[61px] z-40 w-full border-b border-border/60 bg-white/85 backdrop-blur-lg md:hidden"
       aria-label="Мобільна навігація"
     >
-      <div className="flex items-center justify-around px-2">
+      <div className="flex items-center justify-around overflow-x-auto px-2">
         {tabs.map((tab) => (
           <NavLink
             key={tab.to}

@@ -7,11 +7,14 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileTabBar from "../components/MobileTabBar";
 import OrderModal from "../components/OrderModal";
+import TowCalculatorModal from "../components/TowCalculatorModal";
 import Skeleton from "../components/Skeleton";
 import EquipmentCard from "../components/EquipmentCard";
+import PageMeta from "../components/PageMeta";
 import { useRecentlyViewed } from "../hooks/useRecentlyViewed";
 import { getServicesByEquipmentType } from "../data/services";
 import type { Service } from "../data/services";
+import { absoluteImageUrl, absoluteSiteUrl } from "../utils/seo";
 
 /** Генерує масив днів місяця */
 function getMonthDays(year: number, month: number) {
@@ -27,6 +30,8 @@ const monthNames = [
 ];
 
 const weekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
+const TOW_SERVICE_SLUG = "poslugy-evakuatora";
+const TOW_SERVICE_NAME = "Послуги евакуатора";
 
 export default function EquipmentDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -34,14 +39,25 @@ export default function EquipmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [relatedServices, setRelatedServices] = useState<Service[]>([]);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
     if (!slug) return;
-    setLoading(true);
-    getEquipmentBySlug(slug).then((data) => {
+
+    let cancelled = false;
+
+    Promise.resolve().then(async () => {
+      setLoading(true);
+      const data = await getEquipmentBySlug(slug);
+      if (cancelled) return;
+      setActiveImageIndex(0);
       setItem(data);
       setLoading(false);
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
   useEffect(() => {
@@ -118,6 +134,11 @@ export default function EquipmentDetailPage() {
   if (!item) {
     return (
       <div className="flex min-h-screen flex-col bg-white font-sans">
+        <PageMeta
+          title="Техніку не знайдено"
+          description="Запитану техніку не знайдено."
+          noindex
+        />
         <Header />
         <MobileTabBar />
         <div className="flex flex-1 flex-col items-center justify-center gap-4 py-20">
@@ -144,20 +165,44 @@ export default function EquipmentDetailPage() {
     }
     return "уточнюйте";
   })();
+  const isTowCalculator = item.pricingType === "tow_calculator";
+  const actionLabel = isTowCalculator ? "Замовити евакуацію" : "Замовити техніку";
+  const seoImage = absoluteImageUrl(item.images[0]?.url);
+  const canonical = absoluteSiteUrl(`/catalog/${item.slug}`);
+  const galleryImages = item.images ?? [];
+  const activeImage = galleryImages[activeImageIndex] ?? galleryImages[0];
+  const hasMultipleImages = galleryImages.length > 1;
+
+  function showPreviousImage() {
+    setActiveImageIndex((current) => (
+      current === 0 ? galleryImages.length - 1 : current - 1
+    ));
+  }
+
+  function showNextImage() {
+    setActiveImageIndex((current) => (
+      current >= galleryImages.length - 1 ? 0 : current + 1
+    ));
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-white font-sans">
       <Helmet>
-        <title>{`${item.name} — оренда ${item.brand} у Львові | TechnoRent`}</title>
+        <title>{`${item.name} | Оренда ${item.brand} у Львові | TechnoRent`}</title>
         <meta
           name="description"
-          content={`Оренда ${item.name} (${item.brand}) у Львові — ${formatPrice(item.pricePerHour)}. ${item.description.slice(0, 120)}...`}
+          content={`Оренда ${item.name} (${item.brand}) у Львові. ${formatPrice(item.pricePerHour, item.pricingType)}. ${item.description.slice(0, 120)}...`}
         />
-        <link rel="canonical" href={`https://technorent.ua/catalog/${item.slug}`} />
-        <meta property="og:title" content={`${item.name} — оренда у Львові | TechnoRent`} />
+        <link rel="canonical" href={canonical} />
+        <meta property="og:title" content={`${item.name} | Оренда у Львові | TechnoRent`} />
         <meta property="og:description" content={item.description.slice(0, 160)} />
-        <meta property="og:url" content={`https://technorent.ua/catalog/${item.slug}`} />
-        {item.images[0] && <meta property="og:image" content={item.images[0].url} />}
+        <meta property="og:url" content={canonical} />
+        <meta property="og:type" content="product" />
+        {seoImage && <meta property="og:image" content={seoImage} />}
+        <meta name="twitter:card" content={seoImage ? "summary_large_image" : "summary"} />
+        <meta name="twitter:title" content={`${item.name} | Оренда у Львові | TechnoRent`} />
+        <meta name="twitter:description" content={item.description.slice(0, 160)} />
+        {seoImage && <meta name="twitter:image" content={seoImage} />}
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
@@ -165,14 +210,40 @@ export default function EquipmentDetailPage() {
             name: item.name,
             description: item.description,
             brand: { "@type": "Brand", name: item.brand },
-            image: item.images[0]?.url,
+            image: seoImage,
             offers: {
               "@type": "Offer",
               priceCurrency: "UAH",
               price: item.pricePerHour,
+              priceSpecification: {
+                "@type": "UnitPriceSpecification",
+                price: item.pricePerHour,
+                priceCurrency: "UAH",
+                unitText: isTowCalculator ? "км" : "година",
+              },
               availability: "https://schema.org/InStock",
-              url: `https://technorent.ua/catalog/${item.slug}`,
+              url: canonical,
             },
+          })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Техніка",
+                item: absoluteSiteUrl("/catalog"),
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: item.name,
+                item: canonical,
+              },
+            ],
           })}
         </script>
       </Helmet>
@@ -194,16 +265,57 @@ export default function EquipmentDetailPage() {
       {/* 2×2 Grid: Image + Info / Specs + Calendar */}
       <section className="grid grid-cols-2 gap-6 px-[120px] py-6 max-xl:px-8 max-lg:grid-cols-1 max-md:px-4">
         {/* Image */}
-        <div className="h-[420px] overflow-hidden rounded-2xl border border-border bg-[#2B2B2B] max-lg:h-[280px]">
-          {item.images[0] && (
+        <div className="relative h-[420px] overflow-hidden rounded-2xl border border-border bg-[#2B2B2B] max-lg:h-[280px]">
+          {activeImage && (
             <img
-              src={item.images[0].url}
-              alt={`${item.name} — ${item.brand}, оренда у Львові`}
+              src={activeImage.url}
+              alt={activeImage.alt || `${item.name}, ${item.brand}, оренда у Львові`}
               className="h-full w-full object-cover"
               loading="eager"
               width={800}
               height={420}
             />
+          )}
+
+          {hasMultipleImages && (
+            <>
+              <button
+                type="button"
+                onClick={showPreviousImage}
+                aria-label="Попереднє фото"
+                className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl font-bold text-dark shadow-lg transition hover:bg-primary"
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                onClick={showNextImage}
+                aria-label="Наступне фото"
+                className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl font-bold text-dark shadow-lg transition hover:bg-primary"
+              >
+                →
+              </button>
+
+              <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
+                {galleryImages.map((image, index) => (
+                  <button
+                    key={`${image.url}-${index}`}
+                    type="button"
+                    onClick={() => setActiveImageIndex(index)}
+                    aria-label={`Показати фото ${index + 1}`}
+                    className={`h-2.5 rounded-full transition-all ${
+                      index === activeImageIndex
+                        ? "w-8 bg-primary"
+                        : "w-2.5 bg-white/80 hover:bg-white"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <div className="absolute right-4 top-4 rounded-full bg-black/55 px-3 py-1 text-xs font-bold text-white">
+                {activeImageIndex + 1} / {galleryImages.length}
+              </div>
+            </>
           )}
         </div>
 
@@ -211,12 +323,12 @@ export default function EquipmentDetailPage() {
         <div className="flex h-[420px] flex-col gap-3 overflow-y-auto rounded-2xl border border-border bg-white p-6 max-lg:h-auto">
           <h1 className="text-[44px] font-bold text-dark max-lg:text-3xl">{item.name}</h1>
           <p className="text-[15px] font-medium text-dark-text">{item.description}</p>
-          <p className="text-[30px] font-bold text-primary">{formatPrice(item.pricePerHour)}</p>
+          <p className="text-[30px] font-bold text-primary">{formatPrice(item.pricePerHour, item.pricingType)}</p>
           <button
             onClick={() => setShowModal(true)}
             className="w-fit rounded-full bg-primary px-[18px] py-3 text-sm font-bold text-dark transition-opacity hover:opacity-90"
           >
-            Замовити техніку
+            {actionLabel}
           </button>
           <p className="text-[13px] font-bold text-dark">Найближча доступність: {nextAvailable}</p>
         </div>
@@ -276,11 +388,11 @@ export default function EquipmentDetailPage() {
 
       {/* Related services */}
       {relatedServices.length > 0 && (
-          <section className="px-[120px] pb-2 pt-4 max-xl:px-8 max-md:px-4">
+          <section className="px-[120px] pb-2 pt-4 max-xl:px-8 max-md:px-5">
             <h2 className="mb-5 text-[26px] font-bold text-dark">
               Види робіт, які може виконувати ця техніка
             </h2>
-            <div className="grid grid-cols-3 gap-4 max-lg:grid-cols-2 max-md:grid-cols-1">
+            <div className="grid grid-cols-[repeat(3,minmax(0,340px))] justify-center gap-4 max-lg:grid-cols-2 max-md:grid-cols-1">
               {relatedServices.map((s) => (
                 <div
                   key={s.slug}
@@ -304,9 +416,9 @@ export default function EquipmentDetailPage() {
 
       {/* Recently viewed */}
       {recentlyViewed.length > 0 && (
-        <section className="px-[120px] pb-10 max-xl:px-8 max-md:px-4">
+        <section className="px-[120px] pb-10 max-xl:px-8 max-md:px-5">
           <h2 className="mb-5 text-[26px] font-bold text-dark">Нещодавно переглянута техніка</h2>
-          <div className="grid grid-cols-4 gap-5 max-xl:grid-cols-3 max-lg:grid-cols-2 max-md:flex max-md:flex-nowrap max-md:snap-x max-md:snap-mandatory max-md:overflow-x-auto max-md:scroll-smooth max-md:-mx-4 max-md:px-4 max-md:pb-4 max-md:gap-4">
+          <div className="grid grid-cols-4 gap-5 max-xl:grid-cols-3 max-lg:grid-cols-2 max-md:flex max-md:flex-nowrap max-md:snap-x max-md:snap-mandatory max-md:overflow-x-auto max-md:scroll-smooth max-md:-mx-5 max-md:px-5 max-md:pb-4 max-md:gap-4">
             {recentlyViewed.slice(0, 4).map((eq) => (
               <EquipmentCard key={eq.id} item={eq} maxWidth />
             ))}
@@ -318,11 +430,21 @@ export default function EquipmentDetailPage() {
       <Footer />
 
       {showModal && (
-        <OrderModal
-          equipmentName={item.name}
-          equipmentId={item.id}
-          onClose={() => setShowModal(false)}
-        />
+        isTowCalculator ? (
+          <TowCalculatorModal
+            serviceSlug={TOW_SERVICE_SLUG}
+            serviceName={TOW_SERVICE_NAME}
+            priceInfo={`${item.pricePerHour} грн/км`}
+            deliveryRatePerKm={item.pricePerHour}
+            onClose={() => setShowModal(false)}
+          />
+        ) : (
+          <OrderModal
+            equipmentName={item.name}
+            equipmentId={item.id}
+            onClose={() => setShowModal(false)}
+          />
+        )
       )}
     </div>
   );
